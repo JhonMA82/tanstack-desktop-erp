@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ToastProvider } from "@/components/feedback/toaster";
 import { CommandPalette } from "@/components/palette/CommandPalette";
 import { ModuleMenu } from "./ModuleMenu";
@@ -29,6 +29,8 @@ export function AppShell({ children }: AppShellProps) {
 
 function ShellFrame({ children }: AppShellProps) {
   const { paletteOpen, setPaletteOpen } = useShell();
+  const [outlinerCollapsed, setOutlinerCollapsed] = useState(false);
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -47,12 +49,22 @@ function ShellFrame({ children }: AppShellProps) {
       <ModuleMenu />
       <Ribbon />
       <div className="flex min-h-0 flex-1">
-        <Outliner />
+        <Outliner
+          collapsed={outlinerCollapsed}
+          title="Outliner"
+          side="left"
+          onToggle={() => setOutlinerCollapsed((collapsed) => !collapsed)}
+        />
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-panel">
           <ViewportHeader />
           <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
         </main>
-        <PropertiesPanel />
+        <PropertiesPanel
+          collapsed={inspectorCollapsed}
+          title="Properties"
+          side="right"
+          onToggle={() => setInspectorCollapsed((collapsed) => !collapsed)}
+        />
       </div>
       <StatusBar />
       {paletteOpen ? <CommandPalette /> : null}

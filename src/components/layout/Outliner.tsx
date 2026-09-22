@@ -3,22 +3,40 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { FAVORITES, MODULES } from "@/lib/modules";
+import { type PanelChromeProps, PanelCollapseBar, PanelRail } from "./PanelChrome";
 import { useShell } from "./shell-context";
 
 const ITEM_CLASSES =
   "flex h-[22px] w-full items-center gap-1.5 border-l-2 border-l-transparent px-2 text-left text-[11px] text-ink-dim transition-colors hover:bg-panel2 hover:text-ink";
 
+interface OutlinerProps extends PanelChromeProps {
+  /** Collapses the whole panel to a vertical rail. */
+  collapsed: boolean;
+}
+
 /** Left outliner: collapsible favorites and module sections (Blender outliner style). */
-export function Outliner() {
+export function Outliner({ collapsed, title, side, onToggle }: OutlinerProps) {
   const { activeModule } = useShell();
   const [open, setOpen] = useState({ favorites: true, modules: true });
   const activePath = activeModule.path;
+
+  if (collapsed) {
+    return (
+      <aside
+        className="hidden w-6 min-w-6 flex-col border-r border-border bg-panel-out md:flex"
+        aria-label="Outliner (collapsed)"
+      >
+        <PanelRail title={title} side={side} onToggle={onToggle} />
+      </aside>
+    );
+  }
 
   return (
     <aside
       className="hidden w-[210px] min-w-[210px] flex-col overflow-y-auto border-r border-border bg-panel-out md:flex"
       aria-label="Outliner"
     >
+      <PanelCollapseBar title={title} side={side} onToggle={onToggle} />
       <OutlinerSection
         title="Favorites"
         open={open.favorites}

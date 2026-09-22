@@ -1,18 +1,36 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { COMPANY, SYSTEM_PERFORMANCE } from "@/data/system";
+import { type PanelChromeProps, PanelCollapseBar, PanelRail } from "./PanelChrome";
 import { useShell } from "./shell-context";
 
+interface PropertiesPanelProps extends PanelChromeProps {
+  /** Collapses the whole panel to a vertical rail. */
+  collapsed: boolean;
+}
+
 /** Right inspector: active module info, theme toggle, company data and system performance. */
-export function PropertiesPanel() {
+export function PropertiesPanel({ collapsed, title, side, onToggle }: PropertiesPanelProps) {
   const { activeModule, theme, toggleTheme } = useShell();
   const { cpuPercent, ramUsedGb, ramTotalGb, vramUsedGb, vramTotalGb, fps } = SYSTEM_PERFORMANCE;
+
+  if (collapsed) {
+    return (
+      <aside
+        className="hidden w-6 min-w-6 flex-col border-l border-border bg-panel xl:flex"
+        aria-label="Properties (collapsed)"
+      >
+        <PanelRail title={title} side={side} onToggle={onToggle} />
+      </aside>
+    );
+  }
 
   return (
     <aside
       className="hidden w-[240px] min-w-[240px] flex-col overflow-y-auto border-l border-border bg-panel xl:flex"
       aria-label="Properties"
     >
+      <PanelCollapseBar title={title} side={side} onToggle={onToggle} />
       <PropertiesSection title="Module">
         <div className="flex items-center justify-between gap-2 px-2 pt-1.5 text-[11px]">
           <span className="font-bold uppercase tracking-[0.05em] text-ink-bright">
