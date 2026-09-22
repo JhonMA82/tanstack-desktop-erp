@@ -133,8 +133,8 @@ export function CommandPalette() {
           )}
         </div>
         <div className="flex shrink-0 items-center justify-between border-t border-border bg-panel px-2.5 py-1 font-mono text-[9px] text-ink-dim">
-          <span>↑↓ NAV • ENTER EXEC • ESC CLOSE</span>
-          <span>CTRL+K TOGGLE</span>
+          <span>↑↓ NAV • ENTER EXEC • ESC CLOSE • CTRL+K TOGGLE</span>
+          <span className="text-orange">ERP CORE v1 — BLENDER EDITION</span>
         </div>
       </div>
     </div>

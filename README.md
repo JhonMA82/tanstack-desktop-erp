@@ -1,6 +1,6 @@
 # tanstack-desktop-erp
 
-Boilerplate reutilizable de aplicación de escritorio ERP construido con **Vite + React + TanStack** (Router, Query, Table), con un design system inspirado en la UI de Blender replicada desde `Blender-Pro-Lab.html`: paneles oscuros, acento naranja, tipografía Inter + JetBrains Mono, outliner lateral, inspector derecho, command palette (Ctrl+K) y status bar.
+Boilerplate reutilizable de aplicación de escritorio ERP construido con **Vite + React + TanStack** (Router, Query, Table), con un design system inspirado en la UI de Blender replicada desde `Blender-Pro-Lab.html`: paneles oscuros, acento naranja, tipografía Inter + JetBrains Mono, **top bar con Quick Access Toolbar e iconos SVG**, menú de módulos, **ribbon tipo Blender colapsable por módulo**, outliner lateral colapsable, inspector derecho, command palette (Ctrl+K) y status bar con progress sweep.
 
 El módulo **Dashboard** está migrado como ejemplo escalable del patrón completo (datos → TanStack Query → componentes → ruta); el resto de módulos son placeholders navegables que documentan cómo migrarlos.
 
@@ -38,14 +38,16 @@ Todas las versiones están **fijadas en exacto** (sin `^`, `~` ni `latest`); el 
 src/
 ├── components/
 │   ├── ui/             # primitivos sin lógica de negocio
-│   │                   #   Button · Badge · StatusBadge · Panel · Input · Metric · DataTable
-│   ├── layout/         # AppShell (menú, outliner, inspector, status bar) + shell-context
+│   │                   #   Button · Badge · StatusBadge · Panel · Input · Metric · DataTable · Icon
+│   ├── layout/         # TopBar (QAT+search), ModuleMenu (tabs+collapse), Ribbon (grupos por
+│   │                   #   módulo), AppShell, Outliner, PropertiesPanel, ViewportHeader,
+│   │                   #   StatusBar, shell-context (tema/paleta/ribbon/period/view)
 │   ├── palette/        # CommandPalette (Ctrl+K) + registry de comandos
 │   ├── feedback/       # ToastProvider + ToastViewport (SUCCESS/INFO/WARN/ERROR)
 │   ├── dashboard/      # widgets del módulo Dashboard (MetricsGrid, RevenueWaveform, …)
 │   └── ModulePlaceholder.tsx
 ├── data/               # fixtures y fetchers mock (dashboard.ts, system.ts)
-├── lib/                # utilidades puras: cn, format, modules (fuente única), ledger
+├── lib/                # utilidades puras: cn, format, modules (fuente única), ledger, icons
 ├── routes/             # rutas file-based; routeTree.gen.ts lo genera el plugin de Vite
 ├── styles/index.css    # tokens @theme + tema oscuro (.root) y claro (.root.light)
 └── main.tsx            # QueryClient + Router (Register) + render

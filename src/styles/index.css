@@ -85,3 +85,25 @@
   background: var(--borderL);
   border-radius: 2px;
 }
+
+/* Source-UI animations: status-bar progress sweep and LIVE dot pulse. */
+@keyframes erp-prog {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes erp-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}

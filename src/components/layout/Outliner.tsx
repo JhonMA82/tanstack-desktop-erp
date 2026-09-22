@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { FAVORITES, MODULES } from "@/lib/modules";
 import { useShell } from "./shell-context";
@@ -7,9 +8,10 @@ import { useShell } from "./shell-context";
 const ITEM_CLASSES =
   "flex h-[22px] w-full items-center gap-1.5 border-l-2 border-l-transparent px-2 text-left text-[11px] text-ink-dim transition-colors hover:bg-panel2 hover:text-ink";
 
-/** Left outliner: favorite shortcuts plus the module tree (Blender outliner style). */
+/** Left outliner: collapsible favorites and module sections (Blender outliner style). */
 export function Outliner() {
   const { activeModule } = useShell();
+  const [open, setOpen] = useState({ favorites: true, modules: true });
   const activePath = activeModule.path;
 
   return (
@@ -17,7 +19,11 @@ export function Outliner() {
       className="hidden w-[210px] min-w-[210px] flex-col overflow-y-auto border-r border-border bg-panel-out md:flex"
       aria-label="Outliner"
     >
-      <OutlinerSection title="Favorites">
+      <OutlinerSection
+        title="Favorites"
+        open={open.favorites}
+        onToggle={() => setOpen((s) => ({ ...s, favorites: !s.favorites }))}
+      >
         {FAVORITES.map((favorite) => (
           <Link
             key={favorite.label}
@@ -31,7 +37,11 @@ export function Outliner() {
           </Link>
         ))}
       </OutlinerSection>
-      <OutlinerSection title="Modules">
+      <OutlinerSection
+        title="Modules"
+        open={open.modules}
+        onToggle={() => setOpen((s) => ({ ...s, modules: !s.modules }))}
+      >
         {MODULES.map((module) => (
           <Link
             key={module.id}
@@ -52,13 +62,25 @@ export function Outliner() {
   );
 }
 
-function OutlinerSection({ title, children }: { title: string; children: ReactNode }) {
+interface OutlinerSectionProps {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}
+
+function OutlinerSection({ title, open, onToggle, children }: OutlinerSectionProps) {
   return (
-    <div>
-      <h2 className="flex h-5 items-center border-b border-border bg-panel2 px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-ink-dim">
-        {title}
-      </h2>
-      <div className="py-0.5">{children}</div>
+    <div className="flex min-h-0 flex-col">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex h-5 shrink-0 items-center gap-1 border-b border-border bg-panel2 px-2 text-[10px] font-bold tracking-[0.08em] text-ink-dim uppercase hover:text-ink-bright"
+      >
+        {open ? "▾" : "▸"} {title}
+      </button>
+      {open ? <div className="py-0.5">{children}</div> : null}
     </div>
   );
 }

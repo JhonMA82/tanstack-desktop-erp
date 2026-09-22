@@ -4,6 +4,7 @@ import { ExpensesHistogram } from "@/components/dashboard/ExpensesHistogram";
 import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { RevenueWaveform } from "@/components/dashboard/RevenueWaveform";
+import { useShell } from "@/components/layout/shell-context";
 import { Button } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { dashboardQueryOptions } from "@/data/dashboard";
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
+  const { period } = useShell();
   const { data, isPending, isError, error, refetch } = useQuery(dashboardQueryOptions);
 
   if (isPending) {
@@ -35,9 +37,9 @@ function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-2 p-2">
-      <MetricsGrid metrics={data.metrics} footer={`${data.period} • ${data.currency}`} />
+      <MetricsGrid metrics={data.metrics} footer={`${period} • ${data.currency}`} />
       <div className="grid grid-cols-1 gap-2 lg:grid-cols-[1.4fr_1fr]">
-        <RevenueWaveform series={data.revenue} period={data.period} />
+        <RevenueWaveform series={data.revenue} period={period} />
         <ExpensesHistogram bars={data.histogram.bars} breakdown={data.histogram.breakdown} />
       </div>
       <RecentTransactions transactions={data.transactions.slice(0, 6)} total={data.total} />

@@ -5,8 +5,10 @@ import { CommandPalette } from "@/components/palette/CommandPalette";
 import { ModuleMenu } from "./ModuleMenu";
 import { Outliner } from "./Outliner";
 import { PropertiesPanel } from "./PropertiesPanel";
+import { Ribbon } from "./Ribbon";
 import { StatusBar } from "./StatusBar";
 import { ShellProvider, useShell } from "./shell-context";
+import { TopBar } from "./TopBar";
 import { ViewportHeader } from "./ViewportHeader";
 
 export interface AppShellProps {
@@ -14,7 +16,7 @@ export interface AppShellProps {
   children?: ReactNode;
 }
 
-/** Full application frame: menu, outliner, viewport, inspector, status bar, palette. */
+/** Full application frame: top bar, tabs, ribbon, outliner, viewport, inspector, status bar. */
 export function AppShell({ children }: AppShellProps) {
   return (
     <ToastProvider>
@@ -41,7 +43,9 @@ function ShellFrame({ children }: AppShellProps) {
 
   return (
     <div className="flex h-dvh w-screen flex-col overflow-hidden bg-bg text-ink">
+      <TopBar />
       <ModuleMenu />
+      <Ribbon />
       <div className="flex min-h-0 flex-1">
         <Outliner />
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-panel">
