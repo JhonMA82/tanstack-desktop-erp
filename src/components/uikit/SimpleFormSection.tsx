@@ -70,6 +70,7 @@ export function SimpleFormSection() {
           <Select
             id="sf-plan"
             value={form.plan}
+            className="w-full"
             onChange={(event) => set("plan", event.target.value)}
           >
             <option value="free">Free — 1 seat</option>

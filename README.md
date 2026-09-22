@@ -2,7 +2,7 @@
 
 Boilerplate reutilizable de aplicación de escritorio ERP construido con **Vite + React + TanStack** (Router, Query, Table), con un design system inspirado en la UI de Blender replicada desde `Blender-Pro-Lab.html`: paneles oscuros, acento naranja, tipografía Inter + JetBrains Mono, **top bar con Quick Access Toolbar e iconos SVG**, menú de módulos, **ribbon tipo Blender colapsable por módulo**, outliner lateral colapsable, inspector derecho, command palette (Ctrl+K) y status bar con progress sweep.
 
-El módulo **Dashboard** está migrado como ejemplo escalable del patrón completo (datos → TanStack Query → componentes → ruta); el resto de módulos son placeholders navegables que documentan cómo migrarlos. La página **UI Kit** (`/ui-kit`) reúne todos los widgets reutilizables del design system: tokens, botones, badges, la galería de iconos, formularios simple y complejo, modales, toasts, progress, tabs, métricas y una tabla de ejemplo.
+El módulo **Dashboard** está migrado como ejemplo escalable del patrón completo (datos → TanStack Query → componentes → ruta); el resto de módulos son placeholders navegables que documentan cómo migrarlos. La página **UI Kit** (`/ui-kit`) reúne todos los widgets reutilizables del design system: tokens, botones, badges, la galería de iconos, formularios simple y complejo, modales, toasts, progress, tabs, métricas y una tabla de ejemplo. Incluye además tres widgets de dashboard administrativo **inspirados en [arhamkhnz/tanstack-shadcn-admin-dashboard](https://github.com/arhamkhnz/tanstack-shadcn-admin-dashboard/tree/main/src/routes/%28main%29/dashboard/default)** — metric cards, performance overview (chart SVG con selects de periodo/segmento) y subscriber overview (toolbar + tabla paginada con 60 clientes) — reimplementados sin dependencias nuevas en estilo Blender.
 
 ## Stack
 
@@ -41,7 +41,8 @@ src/
 │   │                   #   Button · Badge · StatusBadge · Panel · Input · Metric · DataTable · Icon
 │   │                   #   Field · Select · Textarea · Checkbox · Switch · Slider · Modal · Tabs
 │   │                   #   ProgressBar · DropZone
-│   ├── uikit/          # secciones del showcase /ui-kit (tokens, forms, modals, …)
+│   ├── uikit/          # secciones del showcase /ui-kit (tokens, forms, modals, admin widgets…)
+│   │                   #   MetricCards · PerformanceOverview · SubscriberOverview (ref: shadcn-admin)
 │   ├── layout/         # TopBar (QAT+search), ModuleMenu (tabs+collapse), Ribbon (grupos por
 │   │                   #   módulo), AppShell, Outliner, PropertiesPanel, ViewportHeader,
 │   │                   #   StatusBar, shell-context (tema/paleta/ribbon/period/view)
