@@ -1,0 +1,117 @@
+{
+  "$comment": "Direct dependencies. Version and license verified against the npm registry metadata (npm view <pkg> version license). Source: https://www.npmjs.com/package/<name>.",
+  "packages": {
+    "@tanstack/react-query": {
+      "version": "5.103.2",
+      "license": "MIT",
+      "purpose": "Server-state management: caching, loading and error states via queryOptions",
+      "source": "https://www.npmjs.com/package/@tanstack/react-query",
+      "type": "runtime"
+    },
+    "@tanstack/react-router": {
+      "version": "1.170.38",
+      "license": "MIT",
+      "purpose": "Type-safe file-based routing with code splitting",
+      "source": "https://www.npmjs.com/package/@tanstack/react-router",
+      "type": "runtime"
+    },
+    "@tanstack/react-table": {
+      "version": "9.2.4",
+      "license": "MIT",
+      "purpose": "Headless data tables (Recent Transactions with quick filter model)",
+      "source": "https://www.npmjs.com/package/@tanstack/react-table",
+      "type": "runtime"
+    },
+    "react": {
+      "version": "19.3.0",
+      "license": "MIT",
+      "purpose": "UI rendering library",
+      "source": "https://www.npmjs.com/package/react",
+      "type": "runtime"
+    },
+    "react-dom": {
+      "version": "19.3.0",
+      "license": "MIT",
+      "purpose": "React renderer for the browser DOM",
+      "source": "https://www.npmjs.com/package/react-dom",
+      "type": "runtime"
+    },
+    "@biomejs/biome": {
+      "version": "2.5.14",
+      "license": "MIT OR Apache-2.0",
+      "purpose": "Linter and formatter (bun run lint runs `biome ci .`)",
+      "source": "https://www.npmjs.com/package/@biomejs/biome",
+      "type": "dev"
+    },
+    "@tailwindcss/vite": {
+      "version": "4.3.3",
+      "license": "MIT",
+      "purpose": "Tailwind CSS v4 compiler plugin for Vite",
+      "source": "https://www.npmjs.com/package/@tailwindcss/vite",
+      "type": "dev"
+    },
+    "@tanstack/router-plugin": {
+      "version": "1.168.40",
+      "license": "MIT",
+      "purpose": "Generates routeTree.gen.ts from src/routes (file-based routing)",
+      "source": "https://www.npmjs.com/package/@tanstack/router-plugin",
+      "type": "dev"
+    },
+    "@types/bun": {
+      "version": "1.4.2",
+      "license": "MIT",
+      "purpose": "Type declarations for bun:test in unit tests",
+      "source": "https://www.npmjs.com/package/@types/bun",
+      "type": "dev"
+    },
+    "@types/node": {
+      "version": "26.6.2",
+      "license": "MIT",
+      "purpose": "Type declarations for Node APIs used in vite.config.ts",
+      "source": "https://www.npmjs.com/package/@types/node",
+      "type": "dev"
+    },
+    "@types/react": {
+      "version": "19.3.0",
+      "license": "MIT",
+      "purpose": "Type declarations for React",
+      "source": "https://www.npmjs.com/package/@types/react",
+      "type": "dev"
+    },
+    "@types/react-dom": {
+      "version": "19.3.0",
+      "license": "MIT",
+      "purpose": "Type declarations for React DOM",
+      "source": "https://www.npmjs.com/package/@types/react-dom",
+      "type": "dev"
+    },
+    "@vitejs/plugin-react": {
+      "version": "6.1.1",
+      "license": "MIT",
+      "purpose": "React fast refresh and JSX transform for Vite",
+      "source": "https://www.npmjs.com/package/@vitejs/plugin-react",
+      "type": "dev"
+    },
+    "tailwindcss": {
+      "version": "4.3.3",
+      "license": "MIT",
+      "purpose": "Utility-first CSS engine; design tokens mapped through @theme inline",
+      "source": "https://www.npmjs.com/package/tailwindcss",
+      "type": "dev"
+    },
+    "typescript": {
+      "version": "7.0.2",
+      "license": "Apache-2.0",
+      "purpose": "Static type checking (bun run typecheck runs tsc --noEmit)",
+      "source": "https://www.npmjs.com/package/typescript",
+      "type": "dev"
+    },
+    "vite": {
+      "version": "8.3.0",
+      "license": "MIT",
+      "purpose": "Dev server and production bundler",
+      "source": "https://www.npmjs.com/package/vite",
+      "type": "dev"
+    }
+  }
+}

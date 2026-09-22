@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-header: var(--header);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel2);
+  --color-panel3: var(--panel3);
+  --color-panel-out: var(--panel-out);
+  --color-border: var(--border);
+  --color-border-l: var(--borderL);
+  --color-ink: var(--text);
+  --color-ink-dim: var(--text-dim);
+  --color-ink-bright: var(--text-bright);
+  --color-orange: var(--orange);
+  --color-blue: var(--blue);
+  --color-red: var(--red);
+  --color-green: var(--green);
+  --font-sans: "Inter", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #0e0e0e;
+  --header: #181818;
+  --panel: #1e1e1e;
+  --panel2: #252525;
+  --panel3: #2a2a2a;
+  --panel-out: #1a1a1a;
+  --border: #323232;
+  --borderL: #3a3a3a;
+  --text: #cccccc;
+  --text-dim: #7a7a7a;
+  --text-bright: #eeeeee;
+  --orange: #ff8c32;
+  --blue: #4c8cff;
+  --red: #ff4444;
+  --green: #3ddc84;
+}
+
+:root.light {
+  color-scheme: light;
+  --bg: #d5d5d5;
+  --header: #e0e0e0;
+  --panel: #eaeaea;
+  --panel2: #e0e0e0;
+  --panel3: #d8d8d8;
+  --panel-out: #dedede;
+  --border: #b8b8b8;
+  --borderL: #9a9a9a;
+  --text: #222222;
+  --text-dim: #6a6a6a;
+  --text-bright: #111111;
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--borderL);
+  border-radius: 2px;
+}
