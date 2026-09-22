@@ -86,6 +86,57 @@
   border-radius: 2px;
 }
 
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 16px;
+  margin-top: -7px;
+  background: var(--orange);
+  border: 1px solid var(--border);
+  border-radius: 1px;
+  cursor: ew-resize;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 16px;
+  background: var(--orange);
+  border: 1px solid var(--border);
+  border-radius: 1px;
+  cursor: ew-resize;
+}
+
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  outline: 1px solid var(--text-bright);
+  outline-offset: 1px;
+}
+
+input[type="range"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Source-UI animations: status-bar progress sweep and LIVE dot pulse. */
 @keyframes erp-prog {
   0% {

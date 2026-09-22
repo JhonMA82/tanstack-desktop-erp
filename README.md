@@ -2,7 +2,7 @@
 
 Boilerplate reutilizable de aplicación de escritorio ERP construido con **Vite + React + TanStack** (Router, Query, Table), con un design system inspirado en la UI de Blender replicada desde `Blender-Pro-Lab.html`: paneles oscuros, acento naranja, tipografía Inter + JetBrains Mono, **top bar con Quick Access Toolbar e iconos SVG**, menú de módulos, **ribbon tipo Blender colapsable por módulo**, outliner lateral colapsable, inspector derecho, command palette (Ctrl+K) y status bar con progress sweep.
 
-El módulo **Dashboard** está migrado como ejemplo escalable del patrón completo (datos → TanStack Query → componentes → ruta); el resto de módulos son placeholders navegables que documentan cómo migrarlos.
+El módulo **Dashboard** está migrado como ejemplo escalable del patrón completo (datos → TanStack Query → componentes → ruta); el resto de módulos son placeholders navegables que documentan cómo migrarlos. La página **UI Kit** (`/ui-kit`) reúne todos los widgets reutilizables del design system: tokens, botones, badges, la galería de iconos, formularios simple y complejo, modales, toasts, progress, tabs, métricas y una tabla de ejemplo.
 
 ## Stack
 
@@ -39,6 +39,9 @@ src/
 ├── components/
 │   ├── ui/             # primitivos sin lógica de negocio
 │   │                   #   Button · Badge · StatusBadge · Panel · Input · Metric · DataTable · Icon
+│   │                   #   Field · Select · Textarea · Checkbox · Switch · Slider · Modal · Tabs
+│   │                   #   ProgressBar · DropZone
+│   ├── uikit/          # secciones del showcase /ui-kit (tokens, forms, modals, …)
 │   ├── layout/         # TopBar (QAT+search), ModuleMenu (tabs+collapse), Ribbon (grupos por
 │   │                   #   módulo), AppShell, Outliner, PropertiesPanel, ViewportHeader,
 │   │                   #   StatusBar, shell-context (tema/paleta/ribbon/period/view)

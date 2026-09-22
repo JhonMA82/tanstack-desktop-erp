@@ -17,6 +17,7 @@ import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as UiKitRouteImport } from './routes/ui-kit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UiKitRoute = UiKitRouteImport.update({
+  id: '/ui-kit',
+  path: '/ui-kit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/payroll': typeof PayrollRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/ui-kit': typeof UiKitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/payroll': typeof PayrollRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/ui-kit': typeof UiKitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/payroll': typeof PayrollRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/ui-kit': typeof UiKitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/reports'
     | '/settings'
+    | '/ui-kit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/reports'
     | '/settings'
+    | '/ui-kit'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/payroll'
     | '/reports'
     | '/settings'
+    | '/ui-kit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   PayrollRoute: typeof PayrollRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
+  UiKitRoute: typeof UiKitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ui-kit': {
+      id: '/ui-kit'
+      path: '/ui-kit'
+      fullPath: '/ui-kit'
+      preLoaderRoute: typeof UiKitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   PayrollRoute: PayrollRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
+  UiKitRoute: UiKitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

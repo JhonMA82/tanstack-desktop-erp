@@ -10,7 +10,8 @@ export type ModulePath =
   | "/payroll"
   | "/inventory"
   | "/reports"
-  | "/settings";
+  | "/settings"
+  | "/ui-kit";
 
 export interface ModuleDef {
   /** Stable identifier; matches the route file name under `src/routes`. */
@@ -82,6 +83,14 @@ export const MODULES: ModuleDef[] = [
     count: "—",
     path: "/settings",
     description: "Company profile, security and preferences.",
+  },
+  {
+    id: "uikit",
+    label: "UI KIT",
+    count: "—",
+    path: "/ui-kit",
+    description:
+      "Reusable widgets gallery: tokens, forms, modals, inputs, sliders, badges and icons.",
   },
 ];
 
