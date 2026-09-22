@@ -14,6 +14,7 @@ import { Route as AccountingRouteImport } from './routes/accounting'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as HrmRouteImport } from './routes/hrm'
 import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as InvoiceRouteImport } from './routes/invoice'
 import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -44,6 +45,11 @@ const InventoryRoute = InventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvoiceRoute = InvoiceRouteImport.update({
+  id: '/invoice',
+  path: '/invoice',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PayrollRoute = PayrollRouteImport.update({
   id: '/payroll',
   path: '/payroll',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/hrm': typeof HrmRoute
   '/inventory': typeof InventoryRoute
+  '/invoice': typeof InvoiceRoute
   '/payroll': typeof PayrollRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/hrm': typeof HrmRoute
   '/inventory': typeof InventoryRoute
+  '/invoice': typeof InvoiceRoute
   '/payroll': typeof PayrollRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/hrm': typeof HrmRoute
   '/inventory': typeof InventoryRoute
+  '/invoice': typeof InvoiceRoute
   '/payroll': typeof PayrollRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/hrm'
     | '/inventory'
+    | '/invoice'
     | '/payroll'
     | '/reports'
     | '/settings'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/hrm'
     | '/inventory'
+    | '/invoice'
     | '/payroll'
     | '/reports'
     | '/settings'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/hrm'
     | '/inventory'
+    | '/invoice'
     | '/payroll'
     | '/reports'
     | '/settings'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   HrmRoute: typeof HrmRoute
   InventoryRoute: typeof InventoryRoute
+  InvoiceRoute: typeof InvoiceRoute
   PayrollRoute: typeof PayrollRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invoice': {
+      id: '/invoice'
+      path: '/invoice'
+      fullPath: '/invoice'
+      preLoaderRoute: typeof InvoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/payroll': {
       id: '/payroll'
       path: '/payroll'
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   HrmRoute: HrmRoute,
   InventoryRoute: InventoryRoute,
+  InvoiceRoute: InvoiceRoute,
   PayrollRoute: PayrollRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,

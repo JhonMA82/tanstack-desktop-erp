@@ -6,6 +6,7 @@
 export type ModulePath =
   | "/dashboard"
   | "/accounting"
+  | "/invoice"
   | "/hrm"
   | "/payroll"
   | "/inventory"
@@ -48,6 +49,14 @@ export const MODULES: ModuleDef[] = [
     count: "248",
     path: "/accounting",
     description: "Chart of accounts, ledger, invoices and double-entry journal entries.",
+  },
+  {
+    id: "invoice",
+    label: "INVOICE",
+    count: "NEW",
+    path: "/invoice",
+    description:
+      "Compose a client invoice: line items, tax and discount with a live printable preview.",
   },
   {
     id: "hrm",

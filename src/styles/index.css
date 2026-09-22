@@ -158,3 +158,31 @@ input[type="range"]:disabled {
     opacity: 0.25;
   }
 }
+
+/* Invoice example: the paper portal (InvoicePreview) renders outside #root and
+   stays hidden on screen, so printing emits only the document itself. Both
+   selectors are re-declared inside `@media print` with equal-or-lower source
+   order specificity, so no `!important` is needed to flip them. */
+[data-print-root] {
+  display: none;
+}
+
+[data-print-root] * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* The paper is US Letter at 96dpi (816×1056px), margins are its own padding. */
+@page {
+  margin: 0;
+}
+
+@media print {
+  #root {
+    display: none;
+  }
+
+  [data-print-root] {
+    display: block;
+  }
+}

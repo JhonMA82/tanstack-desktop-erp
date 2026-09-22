@@ -2,7 +2,7 @@
 
 Boilerplate reutilizable de aplicación de escritorio ERP construido con **Vite + React + TanStack** (Router, Query, Table), con un design system inspirado en la UI de Blender replicada desde `Blender-Pro-Lab.html`: paneles oscuros, acento naranja, tipografía Inter + JetBrains Mono, **top bar con Quick Access Toolbar e iconos SVG**, menú de módulos, **ribbon tipo Blender colapsable por módulo**, outliner lateral colapsable, inspector derecho, command palette (Ctrl+K) y status bar con progress sweep.
 
-El módulo **Dashboard** está migrado como ejemplo escalable del patrón completo (datos → TanStack Query → componentes → ruta); el resto de módulos son placeholders navegables que documentan cómo migrarlos. La página **UI Kit** (`/ui-kit`) reúne todos los widgets reutilizables del design system: tokens, botones, badges, la galería de iconos, formularios simple y complejo, modales, toasts, progress, tabs, métricas y una tabla de ejemplo. Incluye además tres widgets de dashboard administrativo **inspirados en [arhamkhnz/tanstack-shadcn-admin-dashboard](https://github.com/arhamkhnz/tanstack-shadcn-admin-dashboard/tree/main/src/routes/%28main%29/dashboard/default)** — metric cards, performance overview (chart SVG con selects de periodo/segmento) y subscriber overview (toolbar + tabla paginada con 60 clientes) — reimplementados sin dependencias nuevas en estilo Blender.
+El módulo **Dashboard** está migrado como ejemplo escalable del patrón completo (datos → TanStack Query → componentes → ruta); el resto de módulos son placeholders navegables que documentan cómo migrarlos. La página **UI Kit** (`/ui-kit`) reúne todos los widgets reutilizables del design system: tokens, botones, badges, la galería de iconos, formularios simple y complejo, modales, toasts, progress, tabs, métricas y una tabla de ejemplo. Incluye además tres widgets de dashboard administrativo **inspirados en [arhamkhnz/tanstack-shadcn-admin-dashboard](https://github.com/arhamkhnz/tanstack-shadcn-admin-dashboard/tree/main/src/routes/%28main%29/dashboard/default)** — metric cards, performance overview (chart SVG con selects de periodo/segmento) y subscriber overview (toolbar + tabla paginada con 60 clientes) — reimplementados sin dependencias nuevas en estilo Blender. El módulo **Invoice** (`/invoice`) reproduce el [ejemplo de facturación del mismo repo](https://github.com/arhamkhnz/tanstack-shadcn-admin-dashboard/tree/main/src/routes/%28main%29/dashboard/invoice): pestañas, datos del documento y del cliente, líneas editables con reordenado, impuesto y descuento con totales en vivo, y preview de la hoja imprimible (el diálogo de impresión emite solo el papel). Todo con los primitivos del design system y sin dependencias nuevas.
 
 ## Stack
 
@@ -49,9 +49,12 @@ src/
 │   ├── palette/        # CommandPalette (Ctrl+K) + registry de comandos
 │   ├── feedback/       # ToastProvider + ToastViewport (SUCCESS/INFO/WARN/ERROR)
 │   ├── dashboard/      # widgets del módulo Dashboard (MetricsGrid, RevenueWaveform, …)
+│   ├── invoice/        # ejemplo /invoice: composer editable + paper imprimible (ref: shadcn-admin)
 │   └── ModulePlaceholder.tsx
-├── data/               # fixtures y fetchers mock (dashboard.ts, system.ts)
-├── lib/                # utilidades puras: cn, format, modules (fuente única), ledger, icons
+├── data/               # fixtures y fetchers mock (dashboard.ts, system.ts, admin-dashboard.ts,
+│   │                   #   invoice.ts — todos con queryOptions y latencia simulada)
+├── lib/                # utilidades puras: cn, format, modules (fuente única), ledger, icons,
+│   │                   #   invoice (fechas, líneas, descuento, impuesto y totales)
 ├── routes/             # rutas file-based; routeTree.gen.ts lo genera el plugin de Vite
 ├── styles/index.css    # tokens @theme + tema oscuro (.root) y claro (.root.light)
 └── main.tsx            # QueryClient + Router (Register) + render
@@ -97,6 +100,6 @@ El tema se aplica con la clase `light` en `<html>` (persistida en `localStorage`
 
 ## Limitaciones conocidas
 
-- ACCOUNTING, HRM, PAYROLL, INVENTORY, REPORTS y SETTINGS son placeholders (alcance: base + 1 módulo).
+- ACCOUNTING, HRM, PAYROLL, INVENTORY, REPORTS y SETTINGS son placeholders (alcance migrado: Dashboard + Invoice).
 - Los datos son fixtures locales; no hay backend, auth ni Tauri.
 - El FPS/clock del status header son decorativos (lectura fija de `data/system.ts` para los medidores del inspector).
