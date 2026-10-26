@@ -96,6 +96,37 @@ Un recurso = interfaz de dominio escrita a mano + schema `zod` anotado `z.ZodTyp
 - **El dato no lleva CSS.** Los estados son semánticos (`tone: "positive" | "warning" | "neutral"`) y
   el widget los traduce a tokens; `StatusBadge` recibe `tone` + label, no vocabulario de dominio.
 
+## Camino de escritura
+
+Un recurso declara **dos** contratos: el de salida (`<Entity>Row`, lo que devuelve la API) y el de entrada
+(`<Entity>Input`, lo que el formulario envía y el body acepta). El de entrada no lleva `id` ni el estado
+`ARCHIVED`: el id lo asigna el servidor y archivar es una acción, no un campo editable. `lib/api.ts`
+expone `sendJson(method, path, body, schema)` con el mismo `ApiError` único y la misma validación que
+`getJson`.
+
+- **El mock escribe en memoria.** `data/<recurso>.ts` guarda el store en una variable de módulo sembrada
+  con el fixture: crear, editar y archivar se ven al invalidar la caché y desaparecen al recargar (en
+  `http` la API es la dueña del estado). `reset<Entity>Store()` aísla los tests. Es la decisión que hace
+  verificable el camino de escritura sin backend.
+- **Archivar no borra.** `archive<Entity>` cambia el estado a `ARCHIVED`; la fila sigue en la lista. Un
+  contable no pierde una línea.
+- **Mutaciones en hooks, no en la capa de datos.** `data/` no importa React: exporta funciones. Los
+  `useCreate/useUpdate/useArchive` viven en `components/<módulo>/` y comparten forma — invalidan
+  `<recurso>QueryKey`, emiten el toast y delegan la navegación en `onDone`. Las páginas no tocan la caché.
+- **Formularios con TanStack Form.** `ui/FormField` envuelve `form.Field` + `Field`/`Input`/`Select`, así
+  cada campo declara label, hint y error sin cablear `onChange`. La validación usa el mismo schema `zod`
+  del contrato: `validators: { onSubmit: <entity>InputSchema }` (Standard Schema). El schema se anota
+  `z.ZodType<Input, Input>`: el segundo genérico fija el tipo de *entrada*, que es el que Standard Schema
+  —y por lo tanto TanStack Form— verifica.
+- **Dinero en centavos.** Los importes son enteros (`amountCents`) y se dividen una sola vez al mostrar,
+  con `formatCents`.
+- **Rutas con parámetro.** Todo segmento con hijas es layout + índice (`<recurso>.$id.tsx` con `<Outlet/>`
+  y `.$id.index.tsx` con el detalle); el formulario de edición cuelga del mismo segmento. Las rutas
+  dinámicas **no** son destinos de navegación: no van a `PAGES` y el guardarraíl las excluye del chequeo
+  de huérfanos, pero sí verifica que cuelguen de un módulo registrado. Las páginas que existen sin ser
+  destino (un alta) se registran con `hidden: true`, así el guardarraíl las conoce y el outliner no las
+  muestra. El breadcrumb del viewport muestra el `pathname` real para no mentir en una ruta dinámica.
+
 ## Tooling
 
 - `bun run gen module|page` escribe el patrón canónico, inserta en el registro, **formatea** lo tocado y
@@ -165,6 +196,8 @@ paquete entero) y guardar componentes en la config (rompe el invariante de datos
   cliente está cubierta por test de componente y por la ubicación del boundary, no por un E2E.
 - `scripts/gen.test.ts` y `scripts/init.test.ts` trabajan sobre `mkdtemp`: generan archivos de verdad y
   verifican que parseen y que el registro y el árbol queden consistentes.
+- El camino de escritura se verificó en navegador real por CDP (crear, validar, detalle, editar, archivar
+  con confirmación e invalidación) durante el desarrollo; sigue sin test de DOM automatizado.
 
 ## Limitaciones conocidas
 
@@ -173,7 +206,9 @@ paquete entero) y guardar componentes en la config (rompe el invariante de datos
 - `zod` entra en el chunk de entrada vía `lib/env.ts`.
 - `bun test` no tiene DOM: los tests de UI son SSR o de componente; un test de interacción exige añadir
   un DOM (happy-dom) y es una decisión diferida.
-- `DataTable` pinta todas las filas de la página: sin virtualización.
+- `DataTable` pinta todas las filas de la página: sin virtualización, sin orden ni selección de filas.
+- El store del mock es de sesión: recargar la página descarta lo escrito (el origen `http` no tiene esa
+  limitación, pero tampoco hay backend).
 - El catálogo curado de iconos se empaqueta completo (~3 kB gzip): sumar un nombre al mapa suma peso
   aunque todavía no se use.
 - Un solo spec raíz; el splitting por módulo (`SPEC.md` junto a `src/config/` y `scripts/`) queda

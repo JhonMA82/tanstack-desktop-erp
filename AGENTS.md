@@ -22,8 +22,9 @@ y el roce que encontró.
 | `bun run format` | aplica fixes seguros de biome |
 | `bun test` | tests (bun test, sin DOM) |
 | `bun run build` | build de producción |
-| `bun run gen module <id>` | scaffold de un módulo completo |
+| `bun run gen module <id>` | scaffold de un módulo CRUD completo (contrato, lista, detalle) |
 | `bun run gen page <module> <page>` | scaffold de una página anidada (submenú) |
+| `bun run gen form <module> <entity>` | formulario + hooks de mutación + alta y edición |
 | `bun run gen` | usage |
 | `bun run init` | rebrand + historia nueva; crea el repo si la copia no trae `.git`. Al terminar se borra a sí mismo (script, test y entrada de `package.json`), así que en un proyecto derivado ya no existe |
 | `bun run routes:generate` | regenera `routeTree.gen.ts` sin arrancar Vite |
@@ -50,19 +51,42 @@ Reglas duras:
 
 ## Recetas
 
-### Agregar un módulo
+### Agregar un módulo (CRUD)
 
 ```bash
-bun run gen module inventory --label "INVENTORY"
+bun run gen module products --entity product --label "PRODUCTS"
 ```
 
-Escribe `routes/inventory.tsx` (layout con `<Outlet/>`), `routes/inventory.index.tsx` (loader +
-`useSuspenseQuery`), `data/inventory.ts` (contrato + fixture + fetcher mock/http + `queryOptions`) y
-`components/inventory/InventoryOverview.tsx`. Inserta la entrada en `config/navigation.ts`, formatea y
-regenera el árbol de rutas.
+`--entity` es el nombre singular y manda los nombres de tipos y hooks (`ProductRow`, `ProductInput`,
+`createProduct`, `useProductQueryOptions`). Escribe:
 
-Después: reemplazá el fixture de `data/<id>.ts` por los datos reales y las columnas del widget.
-**No edites el ribbon a mano**: sale del registro.
+| Archivo | Qué trae |
+|---|---|
+| `routes/products.tsx` | layout del módulo con `<Outlet/>` |
+| `routes/products.index.tsx` | lista: loader + `useSuspenseQuery` |
+| `routes/products.$productId.tsx` | layout del segmento con parámetro (necesario para las hijas) |
+| `routes/products.$productId.index.tsx` | detalle por id |
+| `data/products.ts` | contrato de salida y **de entrada** (`zod`), store mock, lecturas y `create/update/archive`, `queryOptions` de lista y detalle |
+| `components/products/ProductTable.tsx` | tabla con el id linkeado al detalle |
+
+Inserta la entrada en `config/navigation.ts`, formatea y regenera el árbol. Después: reemplazá fixture y
+columnas por los datos reales. **No edites el ribbon a mano**: sale del registro.
+
+### Agregar un formulario de alta y edición
+
+```bash
+bun run gen form products product
+```
+
+Requiere que el módulo exista (usa su contrato de entrada y el layout con parámetro). Escribe
+`components/products/use-product-mutations.ts` (create/update/archive sobre `useMutation` + invalidación
++ toast), `components/products/ProductForm.tsx` (TanStack Form validando con `productInputSchema`),
+`routes/products.new.tsx` y `routes/products.$productId.edit.tsx`. Registra `/products/new` como página
+**oculta** (no aparece en el outliner).
+
+Queda a tu cargo, porque es una decisión de diseño: el botón de alta en la tabla o el ribbon, y el botón
+de archivar con confirmación. El patrón completo está en el módulo de referencia (`entries`):
+`components/entries/EntriesTable.tsx` y `routes/entries.$entryId.index.tsx`.
 
 ### Agregar una página (submenú)
 
@@ -104,6 +128,21 @@ renderizaran como tiles.
 
 La **etiqueta manda el ancho** del tile (mínimo 48px) y acepta `\n` para dos líneas; el bloque de rótulo
 siempre reserva dos, así un botón de una línea no desalinea su icono respecto de los vecinos.
+
+### Escribir datos (mutaciones)
+
+- El hook vive en `components/<módulo>/use-<entity>-mutations.ts`, nunca en `data/`: la capa de datos no
+  importa React.
+- Forma obligatoria: `useMutation` → `onSuccess` invalida `<recurso>QueryKey` y emite toast → la página
+  navega con el callback `onDone`; `onError` emite un toast `ERROR` con `errorMessage(error)`.
+- Archivar **no** borra: cambia el estado a `ARCHIVED` y la fila sigue en la lista.
+- El mock guarda en memoria durante la sesión: crear/editar se ve al invalidar, y un reload vuelve al
+  fixture. Los tests lo aíslan con `reset<Entity>Store()`.
+
+### Dinero
+
+Los importes viajan en **centavos enteros** (`amountCents: 125050`) y se dividen una sola vez al mostrar
+con `formatCents()`. Nunca sumes floats.
 
 ### Agregar un recurso de datos
 

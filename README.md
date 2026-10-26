@@ -25,7 +25,8 @@ rebrandearlo o borrarle la historia. Después, para cada feature:
 
 ```bash
 bun run gen module inventory --label "INVENTORY"   # módulo completo
-bun run gen page inventory items --label "ITEMS"   # página anidada (submenú)
+bun run gen page inventory items --label "ITEMS"    # página anidada (submenú)
+bun run gen form inventory item                     # alta + edición con validación
 ```
 
 El generador escribe el patrón canónico (layout con `<Outlet/>`, índice con `loader` +
@@ -45,6 +46,7 @@ tiempos medidos— está en [`docs/example-project.md`](./docs/example-project.m
 | @tanstack/react-router | 1.170.38 | rutas file-based tipadas con code splitting |
 | @tanstack/react-query | 5.103.2 | estado de servidor: caché, loading y error |
 | @tanstack/react-table | 9.2.4 | tablas headless (features composables, v9) |
+| @tanstack/react-form | 1.33.5 | formularios: estado y validación con los mismos schemas `zod` |
 | zod | 4.6.7 | contratos de datos: valida respuestas HTTP y fixtures |
 | lucide-react | 1.61.0 | iconos, detrás del mapa curado de `src/lib/icons.ts` (ISC) |
 | tailwindcss + @tailwindcss/vite | 4.3.3 | utilidades CSS y tokens vía `@theme inline` |
@@ -90,7 +92,8 @@ src/
 ├── config/
 │   ├── navigation.ts   # FUENTE ÚNICA de tabs, ribbon, outliner y paleta (datos + tipos)
 │   └── app.ts          # marca (APP) y empresa (COMPANY): la shell no conoce el dominio
-├── data/               # recursos: interfaz + schema zod + fixture + queryOptions (overview, system)
+├── data/               # recursos: schema zod de salida y de entrada, fixture, store mock,
+│                       #   lecturas y escrituras, queryOptions (overview, entries, system)
 ├── lib/                # cn, format, icons, api (getJson + ApiError) y env (VITE_DATA_SOURCE)
 ├── routes/             # rutas file-based; routeTree.gen.ts lo genera el plugin
 ├── styles/index.css    # tokens @theme + tema oscuro (.root) y claro (.root.light)
@@ -149,6 +152,23 @@ fallbacks de sistema.
 Presupuesto del ribbon: fila de 96px con **75px útiles** por grupo (3 filas de `SmallButton`); a partir
 de cuatro botones pequeños el grupo declara `columns: 2`.
 
+## Escrituras y formularios
+
+El camino completo (listar → crear → ver → editar → archivar) vive en el módulo de referencia
+`/entries`, y `bun run gen module` + `bun run gen form` lo emiten para cualquier recurso:
+
+- **Dos contratos por recurso**: `<Entity>Row` (lo que devuelve la API) y `<Entity>Input` (lo que manda el
+  formulario). `lib/api.ts` gana `sendJson` y el mock escribe en un store de sesión: crear/editar se ven
+  al invalidar la caché y se descartan al recargar.
+- **Archivar no borra**: la fila cambia a `ARCHIVED` y sigue en la lista.
+- **Mutaciones** en `components/<módulo>/use-<entity>-mutations.ts` sobre `useMutation`: invalidan la key
+  del recurso, emiten el toast y delegan la navegación. La capa de datos sigue sin React.
+- **Formularios** con TanStack Form validando contra el mismo schema `zod` del contrato (`Standard
+  Schema`), con los primitivos `Field`/`Input`/`Select` vía `ui/FormField`.
+- **Rutas de detalle** (`/entries/$entryId`) con layout + índice: el segmento con parámetro renderiza su
+  `<Outlet/>` y las páginas que no son destino se registran con `hidden: true`.
+- **Dinero en centavos** (`amountCents`), dividido una sola vez al mostrar con `formatCents`.
+
 ## Datos: contrato único, dos orígenes
 
 | `VITE_DATA_SOURCE` | Qué hace |
@@ -199,7 +219,8 @@ de cuatro botones pequeños el grupo declara `columns: 2`.
   self-hostearlas.
 - `zod` entra en el chunk de entrada vía `env.ts`: candidato a `manualChunks` si el arranque importa.
 - El FPS y el reloj del status header son decorativos (lectura fija de `data/system.ts`).
-- `DataTable` no virtualiza: pinta todas las filas de la página.
+- `DataTable` no virtualiza y no tiene orden ni selección de filas: pinta todas las filas de la página.
+- El store del mock es de sesión: recargar descarta lo escrito.
 
 ## Licencia
 
