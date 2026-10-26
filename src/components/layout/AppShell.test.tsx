@@ -52,8 +52,12 @@ describe("collapsible side panels", () => {
 
     expect(html).toContain('aria-label="Collapse Outliner"');
     expect(html).toContain('aria-label="Collapse Properties"');
-    // Left panel content is present while expanded.
-    expect(html).toContain("Favorites");
+    // Left panel content is present while expanded (the module tree).
+    expect(html).toContain("Modules");
+    // Every affordance is drawn by the icon set: a text glyph would depend on the
+    // system font and could render as an empty box (that happened with the ribbon
+    // menu chevron, which used a 7px "▾").
+    expect(html).not.toMatch(/[▾▸◂◃▲▼◑◐]/);
     // Right panel content is present while expanded.
     expect(html).toContain("COMPANY");
   });

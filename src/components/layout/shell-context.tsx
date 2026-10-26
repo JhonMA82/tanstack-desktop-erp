@@ -1,21 +1,13 @@
 import { useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import type { ModuleDef } from "@/lib/modules";
-import { moduleByPath } from "@/lib/modules";
+import type { ModuleDef, PageDef } from "@/config/navigation";
+import { moduleByPath, pageByPath } from "@/config/navigation";
 
 export type ThemeMode = "dark" | "light";
 
-/** Ribbon view-mode values used by the source UI's shared view state. */
-export type RibbonView = "LEDGER" | "GRID" | "STATEMENTS";
-
-/** Reporting-period values cycled by the ribbon period dropdown. */
-export const PERIODS = ["7D", "30D", "90D", "FY"] as const;
-
-export type Period = (typeof PERIODS)[number];
-
 interface ShellContextValue {
-  /** Current theme; persisted in `localStorage` under `erp-theme`. */
+  /** Current theme; persisted in `localStorage` under `app-theme`. */
   theme: ThemeMode;
   /** Flips between dark and light themes. */
   toggleTheme: () => void;
@@ -23,27 +15,21 @@ interface ShellContextValue {
   paletteOpen: boolean;
   /** Opens or closes the command palette. */
   setPaletteOpen: (open: boolean) => void;
-  /** Module derived from the current pathname. */
+  /** Module derived from the current pathname (a nested page belongs to its module). */
   activeModule: ModuleDef;
+  /** Nested page of the active module, when the pathname matches one. */
+  activePage?: PageDef;
   /** Whether the ribbon row is collapsed (28px hint bar). */
   ribbonCollapsed: boolean;
   /** Collapses or expands the ribbon. */
   toggleRibbon: () => void;
-  /** Reporting period shared by ribbon, viewport header, status bar and dashboard. */
-  period: Period;
-  /** Sets the reporting period from the ribbon period menu. */
-  setPeriod: (period: Period) => void;
-  /** Ribbon view mode shared by ribbon, viewport header and status bar. */
-  view: RibbonView;
-  /** Updates the ribbon view mode. */
-  setView: (view: RibbonView) => void;
 }
 
 const ShellContext = createContext<ShellContextValue | null>(null);
 
-const THEME_STORAGE_KEY = "erp-theme";
+const THEME_STORAGE_KEY = "app-theme";
 
-/** Provides theme, palette, ribbon and view state plus the active module. */
+/** Provides theme, palette and ribbon state plus the active module and page. */
 export function ShellProvider({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -52,9 +38,8 @@ export function ShellProvider({ children }: { children: ReactNode }) {
   });
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [ribbonCollapsed, setRibbonCollapsed] = useState(false);
-  const [period, setPeriod] = useState<Period>("30D");
-  const [view, setView] = useState<RibbonView>("LEDGER");
   const activeModule = moduleByPath(pathname);
+  const activePage = pageByPath(pathname);
 
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
@@ -70,14 +55,11 @@ export function ShellProvider({ children }: { children: ReactNode }) {
       paletteOpen,
       setPaletteOpen,
       activeModule,
+      activePage,
       ribbonCollapsed,
       toggleRibbon,
-      period,
-      setPeriod,
-      view,
-      setView,
     }),
-    [theme, paletteOpen, activeModule, ribbonCollapsed, toggleRibbon, period, view],
+    [theme, paletteOpen, activeModule, activePage, ribbonCollapsed, toggleRibbon],
   );
 
   return <ShellContext.Provider value={value}>{children}</ShellContext.Provider>;

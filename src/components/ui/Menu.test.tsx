@@ -57,14 +57,15 @@ describe("MenuPanel", () => {
     expect(html).toContain('role="menuitemradio"');
     expect(html).toContain('aria-checked="true"');
     expect(html).toContain('aria-checked="false"');
-    // The current choice is also marked visually.
-    expect(html).toContain("●");
+    // The current choice is marked with an icon, never with a text glyph.
+    expect(html.match(/<svg/g)).toHaveLength(1);
+    expect(html).not.toContain("●");
   });
 
   test("keeps plain commands as menu items and renders their hint", () => {
     const html = renderToString(
       <MenuPanel
-        label="New Invoice"
+        label="New Record"
         focusedIndex={-1}
         onSelect={() => {}}
         items={[item("bill", "New Bill", { hint: "4" })]}
@@ -77,13 +78,27 @@ describe("MenuPanel", () => {
     expect(html).toContain(">4<");
   });
 
+  test("renders the icon of a row that declares one", () => {
+    const html = renderToString(
+      <MenuPanel
+        label="New Record"
+        focusedIndex={-1}
+        onSelect={() => {}}
+        items={[item("note", "New Note", { icon: "file" }), item("plain", "Plain")]}
+      />,
+    );
+
+    expect(html).toContain("<svg");
+    expect(html).toContain('aria-hidden="true"');
+  });
+
   test("only the focused row is tabbable", () => {
     const html = renderToString(
       <MenuPanel
         label="View"
         focusedIndex={1}
         onSelect={() => {}}
-        items={[item("grid", "Grid"), item("ledger", "Ledger")]}
+        items={[item("grid", "Grid"), item("list", "List")]}
       />,
     );
 
@@ -93,6 +108,16 @@ describe("MenuPanel", () => {
 });
 
 describe("Menu", () => {
+  test("draws the chevron trigger with an icon, not a text glyph", () => {
+    const html = renderToString(
+      <Menu label="New Client" variant="chevron" items={[item("a", "A")]} />,
+    );
+
+    // A 7px text glyph depends on the system font and can read as an empty slot.
+    expect(html).toContain("<svg");
+    expect(html).not.toContain("▾");
+  });
+
   test("renders a closed trigger that advertises the popup and the current value", () => {
     const html = renderToString(
       <Menu

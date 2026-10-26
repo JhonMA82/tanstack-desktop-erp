@@ -130,11 +130,9 @@ function MenuItemButton({ item, index, focused, onSelect }: MenuItemButtonProps)
       <span className="flex w-3 shrink-0 items-center justify-center">
         {item.icon ? (
           <Icon name={item.icon} size={10} />
-        ) : (
-          <span aria-hidden="true" className="text-[7px] text-orange">
-            {item.active ? "●" : ""}
-          </span>
-        )}
+        ) : item.active ? (
+          <Icon name="check" size={10} className="text-orange" />
+        ) : null}
       </span>
       <span className="truncate">{item.label}</span>
       {item.hint ? (
@@ -296,7 +294,7 @@ export function Menu({ label, items, variant, text, className }: MenuProps) {
         className={cn(
           "flex shrink-0 cursor-pointer items-center rounded-[2px] font-mono transition-colors",
           variant === "chevron"
-            ? "size-3 justify-center border border-border bg-panel text-[7px] text-ink-dim hover:border-orange hover:text-orange"
+            ? "size-[13px] justify-center border border-border bg-panel text-ink hover:border-orange hover:text-orange"
             : "h-[22px] justify-between gap-1.5 border border-border bg-panel2 px-1.5 text-[10px] text-ink hover:border-border-l",
           open && "border-orange text-orange",
           className,
@@ -305,12 +303,10 @@ export function Menu({ label, items, variant, text, className }: MenuProps) {
         {variant === "pill" ? (
           <>
             <span>{triggerText}</span>
-            <span aria-hidden="true" className="text-[9px]">
-              ▾
-            </span>
+            <Icon name="chevron-down" size={10} />
           </>
         ) : (
-          <span aria-hidden="true">▾</span>
+          <Icon name="chevron-down" size={10} />
         )}
       </button>
       {open && position

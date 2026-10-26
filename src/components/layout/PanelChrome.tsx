@@ -1,3 +1,5 @@
+import { Icon } from "@/components/ui/Icon";
+
 /** Shared collapse affordances for the outliner (left) and inspector (right) side panels. */
 export interface PanelChromeProps {
   /** Panel title used in the header and in the button labels. */
@@ -25,7 +27,7 @@ export function PanelCollapseBar({ title, side, onToggle }: PanelChromeProps) {
         aria-expanded
         className="w-6 shrink-0 cursor-pointer border-l border-border text-[10px] text-ink-dim hover:bg-panel3 hover:text-ink-bright"
       >
-        {side === "left" ? "◂" : "▸"}
+        <Icon name={side === "left" ? "chevron-left" : "chevron-right"} size={9} />
       </button>
     </div>
   );
@@ -44,8 +46,8 @@ export function PanelRail({ title, side, onToggle }: PanelChromeProps) {
       aria-expanded={false}
       className="flex w-full flex-1 cursor-pointer flex-col items-center gap-2 border-border bg-panel2 py-2 text-ink-dim hover:text-ink-bright"
     >
-      <span className="text-[10px]" aria-hidden="true">
-        {side === "left" ? "▸" : "◂"}
+      <span aria-hidden="true">
+        <Icon name={side === "left" ? "chevron-right" : "chevron-left"} size={9} />
       </span>
       <span className="rotate-180 text-[9px] font-bold tracking-[0.08em] uppercase [writing-mode:vertical-rl]">
         {title}

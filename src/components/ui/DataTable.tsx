@@ -16,12 +16,12 @@ import { Input } from "./Input";
 import { Select } from "./Select";
 
 /**
- * Feature set shared by every ERP table (TanStack Table v9): global quick
+ * Feature set shared by every data table (TanStack Table v9): global quick
  * filter with `includesString`, explicit column widths and optional row
  * pagination (page size `Infinity` renders every row on a single page).
  * Declare this once at module scope so TypeScript binds every column def.
  */
-export const erpTableFeatures = tableFeatures({
+export const appTableFeatures = tableFeatures({
   columnFilteringFeature,
   globalFilteringFeature,
   columnSizingFeature,
@@ -31,8 +31,8 @@ export const erpTableFeatures = tableFeatures({
   filterFns: { includesString: filterFn_includesString },
 });
 
-/** Column definition type bound to the shared ERP table features. */
-export type ErpColumnDef<TData extends RowData> = ColumnDef<typeof erpTableFeatures, TData>;
+/** Column definition type bound to the shared table features. */
+export type AppColumnDef<TData extends RowData> = ColumnDef<typeof appTableFeatures, TData>;
 
 const PAGE_SIZE_ITEMS = [10, 20, 30, 40, 50];
 
@@ -41,8 +41,8 @@ export interface DataTableProps<TData extends RowData> {
   title: ReactNode;
   /** Right-aligned header content (totals, counters, actions). */
   actions?: ReactNode;
-  /** Column definitions (`ErpColumnDef`); columns without `size` fill the remainder. */
-  columns: ErpColumnDef<TData>[];
+  /** Column definitions (`AppColumnDef`); columns without `size` fill the remainder. */
+  columns: AppColumnDef<TData>[];
   data: TData[];
   /** When set, renders the header quick-filter input bound to the global filter. */
   filterPlaceholder?: string;
@@ -104,7 +104,7 @@ export function DataTable<TData extends RowData>({
   }, [resetKey]);
 
   const table = useTable({
-    features: erpTableFeatures,
+    features: appTableFeatures,
     columns,
     data,
     state: {

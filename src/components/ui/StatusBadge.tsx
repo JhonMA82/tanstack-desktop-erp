@@ -1,22 +1,30 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import type { LedgerStatus } from "@/lib/ledger";
 
-/** Accent color per ledger status, using design system tokens. */
-const STATUS_COLORS: Record<LedgerStatus, string> = {
-  POSTED: "var(--green)",
-  DRAFT: "var(--orange)",
-  VOID: "var(--red)",
-  PENDING: "var(--blue)",
+/**
+ * Semantic state of a badge. The tone is a design token, so the badge works in
+ * both themes and stays independent of any domain vocabulary.
+ */
+export type StatusTone = "neutral" | "positive" | "warning" | "danger";
+
+/** Accent color per tone, using design system tokens. */
+const TONE_COLORS: Record<StatusTone, string> = {
+  neutral: "var(--text-dim)",
+  positive: "var(--green)",
+  warning: "var(--orange)",
+  danger: "var(--red)",
 };
 
 export interface StatusBadgeProps {
-  status: LedgerStatus;
+  /** Semantic meaning of the label; the color follows the tone, not the text. */
+  tone: StatusTone;
   className?: string;
+  children: ReactNode;
 }
 
-/** Status chip mirroring the original ERP badge (colored border with a 2px accent edge). */
-export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const color = STATUS_COLORS[status];
+/** Status chip with a colored border and a 2px accent edge. */
+export function StatusBadge({ tone, className, children }: StatusBadgeProps) {
+  const color = TONE_COLORS[tone];
   return (
     <span
       className={cn(
@@ -25,7 +33,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       )}
       style={{ borderColor: color, color, borderLeftWidth: 2 }}
     >
-      {status}
+      {children}
     </span>
   );
 }

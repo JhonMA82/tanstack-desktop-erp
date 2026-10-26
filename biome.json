@@ -12,9 +12,31 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "lucide-react": "Import icons through the curated map in src/lib/icons.ts — it is the only gateway to the icon library."
+            }
+          }
+        }
+      }
     }
   },
+  "overrides": [
+    {
+      "includes": ["src/lib/icons.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double",

@@ -78,7 +78,9 @@ export function CommandPalette() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center bg-black/55 pt-[14vh]">
+    // `items-start`: the overlay is a flex row, so without it the panel stretches to
+    // the full height and a short result list leaves an empty half-screen below.
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/55 pt-[14vh]">
       <button
         type="button"
         aria-label="Close command palette"
@@ -111,7 +113,8 @@ export function CommandPalette() {
                 onClick={() => runCommand(command)}
                 onMouseMove={() => setActiveIndex(index)}
                 className={cn(
-                  "flex h-7 w-full items-center gap-2 border-b border-border text-left text-[11px] transition-colors",
+                  // `pr-2.5`: the hint path ran into the panel border with no margin.
+                  "flex h-7 w-full items-center gap-2 border-b border-border pr-2.5 text-left text-[11px] transition-colors",
                   index === activeIndex
                     ? "border-l-2 border-l-orange bg-panel3 pl-[8px] text-ink-bright"
                     : "pl-2.5 text-ink",
@@ -133,9 +136,9 @@ export function CommandPalette() {
             ))
           )}
         </div>
-        <div className="flex shrink-0 items-center justify-between border-t border-border bg-panel px-2.5 py-1 font-mono text-[9px] text-ink-dim">
-          <span>↑↓ NAV • ENTER EXEC • ESC CLOSE • CTRL+K TOGGLE</span>
-          <span className="text-orange">{APP.tagline}</span>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-panel px-2.5 py-1 font-mono text-[9px] text-ink-dim">
+          <span className="truncate">↑↓ NAV • ENTER EXEC • ESC CLOSE</span>
+          <span className="shrink-0 text-orange">{APP.tagline}</span>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import type { SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
+import { Icon } from "./Icon";
 
 /** Native select styled like the source `.select` (24px, mono 11, chevron overlay). */
 export function Select({ className, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
@@ -16,10 +17,10 @@ export function Select({ className, children, ...rest }: SelectHTMLAttributes<HT
         {children}
       </select>
       <span
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 font-mono text-[10px] text-ink-dim"
+        className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-ink-dim"
         aria-hidden="true"
       >
-        ▾
+        <Icon name="chevron-down" size={10} />
       </span>
     </span>
   );

@@ -1,14 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 import { createMemoryHistory, createRouter } from "@tanstack/react-router";
-import { dashboardQueryOptions } from "@/data/dashboard";
-import { invoiceQueryOptions } from "@/data/invoice";
+import { overviewQueryOptions } from "@/data/overview";
 import { routeTree } from "@/routeTree.gen";
 
 /**
  * Loaders read the query client from the router context, so this exercises the
- * whole wiring (`main.tsx` → `__root.tsx` → route) without a DOM: if the
- * context is missing or a loader is not awaited, the cache stays empty.
+ * whole wiring (`main.tsx` → `__root.tsx` → route) without a DOM: if the context
+ * is missing or a loader is not awaited, the cache stays empty.
  */
 async function load(queryClient: QueryClient, path: string): Promise<void> {
   const router = createRouter({
@@ -20,22 +19,19 @@ async function load(queryClient: QueryClient, path: string): Promise<void> {
 }
 
 describe("route loaders", () => {
-  test("the dashboard loader primes the query cache before the route renders", async () => {
+  test("the home loader primes the query cache before the route renders", async () => {
     const queryClient = new QueryClient();
 
-    await load(queryClient, "/dashboard");
+    await load(queryClient, "/home");
 
-    expect(queryClient.getQueryData(dashboardQueryOptions.queryKey)).toBeDefined();
+    expect(queryClient.getQueryData(overviewQueryOptions.queryKey)).toBeDefined();
   });
 
-  test("the invoice loader primes the query cache with the seed", async () => {
+  test("a nested page loads without a data resource of its own", async () => {
     const queryClient = new QueryClient();
 
-    await load(queryClient, "/invoice");
+    await load(queryClient, "/settings/preferences");
 
-    const seed = queryClient.getQueryData<{ defaults: { items: unknown[] } }>(
-      invoiceQueryOptions.queryKey,
-    );
-    expect(seed?.defaults.items.length).toBeGreaterThan(0);
+    expect(queryClient.getQueryData(overviewQueryOptions.queryKey)).toBeUndefined();
   });
 });

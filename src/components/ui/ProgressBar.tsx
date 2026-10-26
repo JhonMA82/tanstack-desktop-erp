@@ -8,7 +8,7 @@ export interface ProgressBarProps {
   className?: string;
 }
 
-/** 2px progress track; `indeterminate` reuses the status bar `erp-prog` sweep. */
+/** 2px progress track; `indeterminate` reuses the status bar `app-prog` sweep. */
 export function ProgressBar({ value = 0, indeterminate = false, className }: ProgressBarProps) {
   const clamped = Math.min(100, Math.max(0, value));
   return (
@@ -22,7 +22,7 @@ export function ProgressBar({ value = 0, indeterminate = false, className }: Pro
       <div
         className={cn(
           "h-full bg-orange",
-          indeterminate ? "w-[42%] animate-[erp-prog_2s_linear_infinite]" : "",
+          indeterminate ? "w-[42%] animate-[app-prog_2s_linear_infinite]" : "",
         )}
         style={indeterminate ? undefined : { width: `${clamped}%` }}
       />

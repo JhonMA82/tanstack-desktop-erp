@@ -21,13 +21,13 @@ export interface AppConfig {
 }
 
 export const APP = {
-  name: "ERP CORE",
+  name: "APP CORE",
   version: "1.0",
   mark: "●",
-  filePath: "/company/acme_corp — LEDGER: ACME_CORP.blend",
-  organization: "ACME",
-  initials: "AC",
-  tagline: "ERP CORE v1 — BLENDER EDITION",
+  filePath: "/workspace/main — PROJECT: WORKSPACE.app",
+  organization: "WORKSPACE",
+  initials: "WS",
+  tagline: "APP CORE v1 — DESKTOP EDITION",
 } satisfies AppConfig;
 
 /** Company identity shown in the inspector and used by the mock data. */

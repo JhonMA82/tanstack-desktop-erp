@@ -1,5 +1,5 @@
 export interface MetricProps {
-  /** Metric key (e.g. `CASH`, `RECEIVABLES`). */
+  /** Metric key (e.g. `ACTIVE RECORDS`). */
   label: string;
   /** Big monospace value (e.g. `$128,400`). */
   value: string;

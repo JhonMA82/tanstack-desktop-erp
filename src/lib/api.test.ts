@@ -43,8 +43,8 @@ describe("getJson", () => {
   test("prefixes the base URL and returns the validated payload", async () => {
     const calls = stubFetch(async () => jsonResponse({ id: "INV-1", ignored: true }));
 
-    await expect(getJson("/invoice/1", payloadSchema)).resolves.toEqual({ id: "INV-1" });
-    expect(calls).toEqual(["/api/invoice/1"]);
+    await expect(getJson("/records/1", payloadSchema)).resolves.toEqual({ id: "INV-1" });
+    expect(calls).toEqual(["/api/records/1"]);
   });
 
   test("throws ApiError carrying the HTTP status when the response is not ok", async () => {
@@ -61,7 +61,7 @@ describe("getJson", () => {
   test("throws ApiError 502 when the payload breaks the contract", async () => {
     stubFetch(async () => jsonResponse({ id: 42 }));
 
-    const error = await failure(getJson("/invoice/1", payloadSchema));
+    const error = await failure(getJson("/records/1", payloadSchema));
 
     expect(error.status).toBe(502);
     expect(error.message).toContain("id");
