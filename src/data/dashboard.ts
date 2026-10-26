@@ -1,4 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
+import { z } from "zod";
+import { getJson, MOCK_LATENCY_MS, simulateLatency } from "@/lib/api";
+import { DATA_SOURCE } from "@/lib/env";
 import type { LedgerStatus } from "@/lib/ledger";
 
 export interface MetricDatum {
@@ -55,6 +58,54 @@ export interface DashboardData {
   /** Header total of the recent-transactions table. */
   total: string;
 }
+
+const metricSchema: z.ZodType<MetricDatum> = z.object({
+  label: z.string(),
+  value: z.string(),
+  delta: z.string(),
+  accent: z.string(),
+  spark: z.array(z.number()),
+});
+
+const revenueSchema: z.ZodType<RevenueSeries> = z.object({
+  trend: z.string(),
+  baseline: z.string(),
+  min: z.string(),
+  max: z.string(),
+  average: z.string(),
+  yoy: z.string(),
+});
+
+const histogramBarSchema: z.ZodType<HistogramBar> = z.object({
+  account: z.string(),
+  height: z.number(),
+  color: z.string(),
+});
+
+const transactionSchema: z.ZodType<Transaction> = z.object({
+  id: z.string(),
+  date: z.string(),
+  vendor: z.string(),
+  description: z.string(),
+  account: z.string(),
+  debit: z.string(),
+  credit: z.string(),
+  status: z.enum(["POSTED", "DRAFT", "VOID", "PENDING"]),
+});
+
+/** Wire contract of `/dashboard`; the mock fixture is validated with it too. */
+const dashboardSchema: z.ZodType<DashboardData> = z.object({
+  period: z.string(),
+  currency: z.string(),
+  metrics: z.array(metricSchema),
+  revenue: revenueSchema,
+  histogram: z.object({
+    bars: z.array(histogramBarSchema),
+    breakdown: z.string(),
+  }),
+  transactions: z.array(transactionSchema),
+  total: z.string(),
+});
 
 const DASHBOARD_DATA: DashboardData = {
   period: "30D",
@@ -205,15 +256,17 @@ const DASHBOARD_DATA: DashboardData = {
 };
 
 /**
- * Simulated API latency so loading states are observable during development.
- * Replace the body with a real `fetch` when wiring a backend; the returned
- * `dashboardQueryOptions` contract stays the same.
+ * Loads the dashboard payload from the configured data origin: the mock fixture
+ * behind simulated latency, or `GET /dashboard` validated against the contract.
+ * One env variable (`VITE_DATA_SOURCE`) switches between them.
  */
-const SIMULATED_LATENCY_MS = 250;
-
 export async function fetchDashboard(): Promise<DashboardData> {
-  await new Promise((resolve) => setTimeout(resolve, SIMULATED_LATENCY_MS));
-  return DASHBOARD_DATA;
+  if (DATA_SOURCE === "http") {
+    return getJson("/dashboard", dashboardSchema);
+  }
+
+  await simulateLatency(MOCK_LATENCY_MS);
+  return dashboardSchema.parse(DASHBOARD_DATA);
 }
 
 /** TanStack Query options for the dashboard payload (key: `["dashboard"]`). */

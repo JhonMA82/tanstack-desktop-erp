@@ -1,7 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
+import { z } from "zod";
+import { getJson, MOCK_LATENCY_MS, simulateLatency } from "@/lib/api";
+import { DATA_SOURCE } from "@/lib/env";
 import {
   addDays,
   type InvoiceIssuer,
+  type InvoiceLineItem,
   type InvoiceParty,
   type InvoiceTaxOption,
   type InvoiceValues,
@@ -62,6 +66,58 @@ export interface InvoiceSeed {
   taxOptions: InvoiceTaxOption[];
 }
 
+const lineItemSchema: z.ZodType<InvoiceLineItem> = z.object({
+  id: z.string(),
+  description: z.string(),
+  quantity: z.number(),
+  unitPrice: z.number(),
+});
+
+const partySchema: z.ZodType<InvoiceParty> = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  addressLines: z.array(z.string()),
+  taxId: z.string(),
+});
+
+const issuerSchema: z.ZodType<InvoiceIssuer> = z.object({
+  name: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  website: z.string(),
+  addressLines: z.array(z.string()),
+  taxId: z.string(),
+  paymentAccountName: z.string(),
+  routingNumber: z.string(),
+  issuerName: z.string(),
+});
+
+const taxOptionSchema: z.ZodType<InvoiceTaxOption> = z.object({
+  id: z.string(),
+  name: z.string(),
+  rate: z.number(),
+});
+
+const valuesSchema: z.ZodType<InvoiceValues> = z.object({
+  referenceNumber: z.string(),
+  issuedDate: z.string(),
+  paymentDueDate: z.string(),
+  issuer: issuerSchema,
+  to: partySchema,
+  taxId: z.string(),
+  discountType: z.enum(["fixed", "percent"]),
+  discountValue: z.number(),
+  items: z.array(lineItemSchema),
+});
+
+/** Wire contract of `/invoice`; the mock seed is validated with it too. */
+const invoiceSeedSchema: z.ZodType<InvoiceSeed> = z.object({
+  defaults: valuesSchema,
+  clients: z.array(partySchema),
+  taxOptions: z.array(taxOptionSchema),
+});
+
 function createDefaults(): InvoiceValues {
   const today = new Date();
   return {
@@ -82,20 +138,21 @@ function createDefaults(): InvoiceValues {
 }
 
 /**
- * Simulated API latency so loading states are observable during development.
- * Replace the body with a real `fetch` when wiring a backend; the returned
- * `invoiceQueryOptions` contract stays the same.
+ * Loads the invoice seed (defaults, clients and tax options) from the configured
+ * data origin: the local seed behind simulated latency, or `GET /invoice`
+ * validated against the contract.
  */
-const SIMULATED_LATENCY_MS = 250;
-
-/** Loads the invoice seed (defaults, clients and tax options). */
 export async function fetchInvoice(): Promise<InvoiceSeed> {
-  await new Promise((resolve) => setTimeout(resolve, SIMULATED_LATENCY_MS));
-  return {
+  if (DATA_SOURCE === "http") {
+    return getJson("/invoice", invoiceSeedSchema);
+  }
+
+  await simulateLatency(MOCK_LATENCY_MS);
+  return invoiceSeedSchema.parse({
     defaults: createDefaults(),
     clients: INVOICE_CLIENTS,
     taxOptions: INVOICE_TAX_OPTIONS,
-  };
+  });
 }
 
 /** TanStack Query options for the invoice seed (key: `["invoice"]`). */
