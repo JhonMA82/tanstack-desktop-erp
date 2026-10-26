@@ -4,15 +4,17 @@ import path from "node:path";
 import { generateRouteTree } from "./routes";
 
 /**
- * Scaffolds a module or a nested page from the same pattern the base uses, so an
- * agent never re-derives the structure by hand.
+ * Scaffolds the base's own patterns so an agent never re-derives them by hand.
  *
- *   bun run gen module <id> --label "INVENTORY" [--count "—"]
- *   bun run gen page <module> <page> [--label "ITEMS"]
+ *   bun run gen module <id> [--entity <singular>] [--label "LABEL"]
+ *   bun run gen page <module> <page> [--label "LABEL"]
+ *   bun run gen form <module> <entity>
  *
- * Non-interactive on purpose (flags only). It writes every file of the canonical
- * pattern, inserts the registry entry at the `gen:` marker, regenerates
- * `routeTree.gen.ts` and formats what it touched.
+ * `gen module` emits a CRUD-ready slice: contract + mock store + reads + writes,
+ * the list, the detail route under a param and the registry entry. `gen form` adds
+ * the form, its mutation hooks and the create/edit pages. Non-interactive on
+ * purpose (flags only); every command formats what it wrote and regenerates
+ * `routeTree.gen.ts`.
  */
 
 const MARKER_MODULES = "  // gen:modules";
@@ -23,6 +25,8 @@ export interface Options {
   root: string;
   label?: string;
   count?: string;
+  /** Singular name of the entity (`entry` for the `entries` module). Defaults to the id. */
+  entity?: string;
 }
 
 // ---------------------------------------------------------------- name helpers
@@ -49,6 +53,39 @@ function upper(id: string): string {
 /** Strips the characters that would break an emitted string literal. */
 function sanitizeLabel(label: string): string {
   return label.replace(/["\\\n\r]/g, "").trim();
+}
+
+/** Everything the templates need to name things, derived from one pair of ids. */
+interface Names {
+  /** Module id (`entries`). */
+  id: string;
+  /** Entity slug (`entry`). */
+  entity: string;
+  /** Route param (`entryId`). */
+  param: string;
+  /** `Entry`. */
+  Name: string;
+  /** `entry`. */
+  name: string;
+  /** `entries`. */
+  ids: string;
+  /** `ENTRY`. */
+  NAME: string;
+  /** `ENT`. */
+  prefix: string;
+}
+
+function namesFor(id: string, entity = id): Names {
+  return {
+    id,
+    entity,
+    param: `${camel(entity)}Id`,
+    Name: pascal(entity),
+    name: camel(entity),
+    ids: camel(id),
+    NAME: upper(entity),
+    prefix: entity.slice(0, 3).toUpperCase(),
+  };
 }
 
 // ---------------------------------------------------------------- file writing
@@ -115,212 +152,604 @@ async function pagesSection(root: string): Promise<string> {
   );
 }
 
-// ------------------------------------------------------------------- templates
-
-function dataFile(id: string): string {
-  const Name = pascal(id);
-  const name = camel(id);
-  const prefix = id.slice(0, 3).toUpperCase();
-
-  return `import { queryOptions } from "@tanstack/react-query";
-import { z } from "zod";
-import { getJson, simulateLatency } from "@/lib/api";
-import { DATA_SOURCE } from "@/lib/env";
-
-export type ${Name}Status = "ACTIVE" | "PENDING" | "ARCHIVED";
-
-export interface ${Name}Record {
-  id: string;
-  name: string;
-  status: ${Name}Status;
+/** Formats and refreshes the route tree, so the repo stays green after a command. */
+async function finalize(root: string, files: string[]): Promise<void> {
+  await format(root, files);
+  await generateRouteTree(root);
 }
 
-export interface ${Name}Data {
-  records: ${Name}Record[];
-  /** Header counter of the table (e.g. "3 RECORDS"). */
+// --------------------------------------------------------------- data contract
+
+function dataFile(n: Names): string {
+  return `import { queryOptions } from "@tanstack/react-query";
+import { z } from "zod";
+import { ApiError, getJson, sendJson, simulateLatency } from "@/lib/api";
+import { DATA_SOURCE } from "@/lib/env";
+
+export type ${n.Name}Status = "DRAFT" | "POSTED" | "ARCHIVED";
+
+export interface ${n.Name}Row {
+  id: string;
+  name: string;
+  status: ${n.Name}Status;
+}
+
+export interface ${n.Name}List {
+  ${n.ids}: ${n.Name}Row[];
   totalLabel: string;
 }
 
-const recordSchema: z.ZodType<${Name}Record> = z.object({
-  id: z.string(),
-  name: z.string(),
-  status: z.enum(["ACTIVE", "PENDING", "ARCHIVED"]),
+/** Payload shared by the form and the HTTP body: no id, no archived state. */
+export interface ${n.Name}Input {
+  name: string;
+  status: Exclude<${n.Name}Status, "ARCHIVED">;
+}
+
+/** Input contract: the form validates with it and the HTTP payload uses it. */
+export const ${n.name}InputSchema: z.ZodType<${n.Name}Input, ${n.Name}Input> = z.object({
+  name: z.string().trim().min(1, "Name is required").max(80, "Too long"),
+  status: z.enum(["DRAFT", "POSTED"]),
 });
 
-/** Wire contract of /${id}; the mock fixture is validated with it too. */
-const ${name}Schema: z.ZodType<${Name}Data> = z.object({
-  records: z.array(recordSchema),
+const statusSchema = z.enum(["DRAFT", "POSTED", "ARCHIVED"]);
+
+const rowSchema: z.ZodType<${n.Name}Row> = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: statusSchema,
+});
+
+/** Wire contract of /${n.id}; the mock fixture is validated with it too. */
+const listSchema: z.ZodType<${n.Name}List> = z.object({
+  ${n.ids}: z.array(rowSchema),
   totalLabel: z.string(),
 });
 
-/** Replace this placeholder payload with your domain data. */
-const FIXTURE: ${Name}Data = {
-  records: [
-    { id: "${prefix}-1001", name: "First record", status: "ACTIVE" },
-    { id: "${prefix}-1002", name: "Second record", status: "PENDING" },
-    { id: "${prefix}-1003", name: "Third record", status: "ARCHIVED" },
-  ],
-  totalLabel: "3 RECORDS",
-};
+const FIXTURE: ${n.Name}Row[] = [
+  { id: "${n.prefix}-1001", name: "First record", status: "POSTED" },
+  { id: "${n.prefix}-1002", name: "Second record", status: "DRAFT" },
+  { id: "${n.prefix}-1003", name: "Third record", status: "ARCHIVED" },
+];
 
 /**
- * Loads the payload from the configured data origin: the mock fixture behind
- * simulated latency, or GET /${id} validated against the contract.
+ * Session store of the mock adapter: writes land here and disappear on reload, so
+ * create/edit/archive show up right after the cache invalidation. In http mode the
+ * API owns the state and this is never read.
  */
-export async function fetch${Name}(): Promise<${Name}Data> {
+let store: ${n.Name}Row[] = FIXTURE.map((row) => ({ ...row }));
+
+/** Restores the fixture; the tests use it to isolate the mock store. */
+export function reset${n.Name}Store(): void {
+  store = FIXTURE.map((row) => ({ ...row }));
+}
+
+function totalLabel(rows: ${n.Name}Row[]): string {
+  return \`\${rows.length} ROWS\`;
+}
+
+function nextId(): string {
+  const highest = store.reduce((max, row) => {
+    const numeric = Number(row.id.replace(/\\D/g, ""));
+    return Number.isFinite(numeric) ? Math.max(max, numeric) : max;
+  }, 0);
+  return \`${n.prefix}-\${String(highest + 1)}\`;
+}
+
+/** Reads the list from the configured origin. */
+export async function fetch${n.Name}List(): Promise<${n.Name}List> {
   if (DATA_SOURCE === "http") {
-    return getJson("/${id}", ${name}Schema);
+    return getJson("/${n.id}", listSchema);
   }
 
   await simulateLatency();
-  return ${name}Schema.parse(FIXTURE);
+  return listSchema.parse({ ${n.ids}: store, totalLabel: totalLabel(store) });
 }
 
-/** TanStack Query options for the payload (key: ["${id}"]). */
-export const ${name}QueryOptions = queryOptions({
-  queryKey: ["${id}"],
-  queryFn: fetch${Name},
+/** Reads one row by id. */
+export async function fetch${n.Name}(id: string): Promise<${n.Name}Row> {
+  if (DATA_SOURCE === "http") {
+    return getJson(\`/${n.id}/\${id}\`, rowSchema);
+  }
+
+  await simulateLatency();
+  const found = store.find((row) => row.id === id);
+  if (!found) {
+    throw new ApiError(\`${n.Name} \${id} not found\`, 404);
+  }
+  return rowSchema.parse(found);
+}
+
+/** Creates a row: POST in http mode, an insert in the mock store. */
+export async function create${n.Name}(input: ${n.Name}Input): Promise<${n.Name}Row> {
+  if (DATA_SOURCE === "http") {
+    return sendJson("POST", "/${n.id}", ${n.name}InputSchema.parse(input), rowSchema);
+  }
+
+  await simulateLatency();
+  const row: ${n.Name}Row = { ...${n.name}InputSchema.parse(input), id: nextId() };
+  store = [row, ...store];
+  return rowSchema.parse(row);
+}
+
+/** Updates a row in place. */
+export async function update${n.Name}(id: string, input: ${n.Name}Input): Promise<${n.Name}Row> {
+  if (DATA_SOURCE === "http") {
+    return sendJson("PATCH", \`/${n.id}/\${id}\`, ${n.name}InputSchema.parse(input), rowSchema);
+  }
+
+  await simulateLatency();
+  const current = store.find((row) => row.id === id);
+  if (!current) {
+    throw new ApiError(\`${n.Name} \${id} not found\`, 404);
+  }
+  const updated: ${n.Name}Row = { ...current, ...${n.name}InputSchema.parse(input) };
+  store = store.map((row) => (row.id === id ? updated : row));
+  return rowSchema.parse(updated);
+}
+
+/** Archives instead of deleting: an archived row stays in the list. */
+export async function archive${n.Name}(id: string): Promise<${n.Name}Row> {
+  if (DATA_SOURCE === "http") {
+    return sendJson("DELETE", \`/${n.id}/\${id}\`, undefined, rowSchema);
+  }
+
+  await simulateLatency();
+  const current = store.find((row) => row.id === id);
+  if (!current) {
+    throw new ApiError(\`${n.Name} \${id} not found\`, 404);
+  }
+  const archived: ${n.Name}Row = { ...current, status: "ARCHIVED" };
+  store = store.map((row) => (row.id === id ? archived : row));
+  return rowSchema.parse(archived);
+}
+
+/** Root key of the resource; mutations invalidate it to refresh list and detail. */
+export const ${n.ids}QueryKey = ["${n.id}"] as const;
+
+/** TanStack Query options for the list (key: ["${n.id}"]). */
+export const ${n.ids}QueryOptions = queryOptions({
+  queryKey: ${n.ids}QueryKey,
+  queryFn: fetch${n.Name}List,
 });
+
+/** TanStack Query options for one row (key: ["${n.id}", id]). */
+export function ${n.name}QueryOptions(id: string) {
+  return queryOptions({
+    queryKey: [...${n.ids}QueryKey, id] as const,
+    queryFn: () => fetch${n.Name}(id),
+  });
+}
 `;
 }
 
-function overviewComponent(id: string): string {
-  const Name = pascal(id);
+// ------------------------------------------------------------------ components
 
-  return `import type { AppColumnDef } from "@/components/ui/DataTable";
+function tableComponent(n: Names): string {
+  return `import { Link } from "@tanstack/react-router";
+import type { AppColumnDef } from "@/components/ui/DataTable";
 import { DataTable } from "@/components/ui/DataTable";
 import type { StatusTone } from "@/components/ui/StatusBadge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import type { ${Name}Record, ${Name}Status } from "@/data/${id}";
+import type { ${n.Name}Row, ${n.Name}Status } from "@/data/${n.id}";
 
-const STATUS_TONE: Record<${Name}Status, StatusTone> = {
-  ACTIVE: "positive",
-  PENDING: "warning",
+const STATUS_TONE: Record<${n.Name}Status, StatusTone> = {
+  DRAFT: "warning",
+  POSTED: "positive",
   ARCHIVED: "neutral",
 };
 
-const COLUMNS: AppColumnDef<${Name}Record>[] = [
+const COLUMNS: AppColumnDef<${n.Name}Row>[] = [
   {
     accessorKey: "id",
     header: "ID",
-    size: 100,
-    cell: ({ getValue }) => <span className="font-mono">{getValue<string>()}</span>,
+    size: 110,
+    cell: ({ row }) => (
+      <Link
+        to="/${n.id}/$${n.param}"
+        params={{ ${n.param}: row.original.id }}
+        className="font-mono text-orange underline-offset-2 hover:underline"
+      >
+        {row.original.id}
+      </Link>
+    ),
   },
   {
     accessorKey: "name",
-    header: "NAME",
+    header: "${n.NAME}",
   },
   {
     accessorKey: "status",
     header: "STATUS",
-    size: 90,
+    size: 100,
     cell: ({ row }) => (
       <StatusBadge tone={STATUS_TONE[row.original.status]}>{row.original.status}</StatusBadge>
     ),
   },
 ];
 
-export interface ${Name}OverviewProps {
-  records: ${Name}Record[];
-  /** Header counter (e.g. "3 RECORDS"). */
+export interface ${n.Name}TableProps {
+  rows: ${n.Name}Row[];
+  /** Header counter (e.g. "3 ROWS"). */
   total: string;
 }
 
-/** Replace these columns with the module's real presentational widgets. */
-export function ${Name}Overview({ records, total }: ${Name}OverviewProps) {
+/** List of the module: the id links to the detail page. */
+export function ${n.Name}Table({ rows, total }: ${n.Name}TableProps) {
   return (
     <DataTable
-      title="${upper(id)} • RECORDS"
+      title="${n.NAME}S"
       actions={total}
       columns={COLUMNS}
-      data={records}
-      filterPlaceholder="QUICK FILTER"
+      data={rows}
+      filterPlaceholder="FILTER ${n.NAME}S"
     />
   );
 }
 `;
 }
 
-function layoutRoute(id: string): string {
-  const Name = pascal(id);
+function mutationsHook(n: Names): string {
+  return `import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/feedback/toaster";
+import type { ${n.Name}Input, ${n.Name}Row } from "@/data/${n.id}";
+import { archive${n.Name}, create${n.Name}, ${n.ids}QueryKey, update${n.Name} } from "@/data/${n.id}";
+import { errorMessage } from "@/lib/api";
 
+/**
+ * Write path of the module: one hook per mutation, all sharing the same shape —
+ * invalidate the resource, toast the outcome, and let the page decide where to go
+ * through \`onDone\`. Pages stay free of cache and error plumbing.
+ */
+function useInvalidate() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: ${n.ids}QueryKey });
+}
+
+export function useCreate${n.Name}(onDone?: (row: ${n.Name}Row) => void) {
+  const invalidate = useInvalidate();
+  const { push } = useToast();
+
+  return useMutation({
+    mutationFn: (input: ${n.Name}Input) => create${n.Name}(input),
+    onSuccess: (row) => {
+      void invalidate();
+      push({ kind: "SUCCESS", title: "CREATED", message: row.id });
+      onDone?.(row);
+    },
+    onError: (error) => {
+      push({ kind: "ERROR", title: "CREATE FAILED", message: errorMessage(error) });
+    },
+  });
+}
+
+export function useUpdate${n.Name}(onDone?: (row: ${n.Name}Row) => void) {
+  const invalidate = useInvalidate();
+  const { push } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: ${n.Name}Input }) =>
+      update${n.Name}(id, input),
+    onSuccess: (row) => {
+      void invalidate();
+      push({ kind: "SUCCESS", title: "SAVED", message: \`\${row.id} — updated\` });
+      onDone?.(row);
+    },
+    onError: (error) => {
+      push({ kind: "ERROR", title: "SAVE FAILED", message: errorMessage(error) });
+    },
+  });
+}
+
+export function useArchive${n.Name}(onDone?: (row: ${n.Name}Row) => void) {
+  const invalidate = useInvalidate();
+  const { push } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => archive${n.Name}(id),
+    onSuccess: (row) => {
+      void invalidate();
+      push({ kind: "WARN", title: "ARCHIVED", message: \`\${row.id} — kept in the ledger\` });
+      onDone?.(row);
+    },
+    onError: (error) => {
+      push({ kind: "ERROR", title: "ARCHIVE FAILED", message: errorMessage(error) });
+    },
+  });
+}
+`;
+}
+
+function formComponent(n: Names): string {
+  return `import { useForm } from "@tanstack/react-form";
+import { Button } from "@/components/ui/Button";
+import { FormSelectField, FormTextField } from "@/components/ui/FormField";
+import { Panel } from "@/components/ui/Panel";
+import type { ${n.Name}Input } from "@/data/${n.id}";
+import { ${n.name}InputSchema } from "@/data/${n.id}";
+
+/** Blank input for the create page. */
+export function empty${n.Name}(): ${n.Name}Input {
+  return { name: "", status: "DRAFT" };
+}
+
+export interface ${n.Name}FormProps {
+  /** Values the form starts with: blank for create, the stored row for edit. */
+  defaultValues: ${n.Name}Input;
+  submitLabel: string;
+  /** Mutation in flight: disables the submit button. */
+  isPending?: boolean;
+  onSubmit: (input: ${n.Name}Input) => Promise<unknown>;
+  onCancel: () => void;
+}
+
+/**
+ * TanStack Form validates with the same zod schema the data layer uses, and the
+ * FormField primitives wire the label, the hint and the field errors.
+ * Replace the fields to match the resource's input contract.
+ */
+export function ${n.Name}Form({
+  defaultValues,
+  submitLabel,
+  isPending = false,
+  onSubmit,
+  onCancel,
+}: ${n.Name}FormProps) {
+  const form = useForm({
+    defaultValues,
+    validators: { onSubmit: ${n.name}InputSchema },
+    onSubmit: async ({ value }) => {
+      await onSubmit(value);
+    },
+  });
+
+  return (
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void form.handleSubmit();
+      }}
+    >
+      <Panel title="${n.NAME}">
+        <div className="grid grid-cols-1 gap-3 p-2 sm:grid-cols-2">
+          <form.Field name="name">
+            {(field) => <FormTextField field={field} id="name" label="NAME" />}
+          </form.Field>
+
+          <form.Field name="status">
+            {(field) => (
+              <FormSelectField
+                field={field}
+                id="status"
+                label="STATUS"
+                options={[
+                  { value: "DRAFT", label: "Draft" },
+                  { value: "POSTED", label: "Posted" },
+                ]}
+              />
+            )}
+          </form.Field>
+        </div>
+      </Panel>
+
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          CANCEL
+        </Button>
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting] as const}>
+          {([canSubmit, isSubmitting]) => (
+            <Button type="submit" variant="primary" disabled={!canSubmit || isSubmitting || isPending}>
+              {isSubmitting || isPending ? "SAVING…" : submitLabel}
+            </Button>
+          )}
+        </form.Subscribe>
+      </div>
+    </form>
+  );
+}
+`;
+}
+
+// --------------------------------------------------------------------- routes
+
+function layoutRoute(n: Names): string {
   return `import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 /**
- * Layout of the ${upper(id)} module. Every module keeps this shape — a layout that
+ * Layout of the ${n.NAME} module. Every module keeps this shape — a layout that
  * renders its <Outlet/> plus an index page — so nested pages never need the parent
  * rewritten (bun run gen page relies on it).
  */
-export const Route = createFileRoute("/${id}")({
-  component: ${Name}Layout,
+export const Route = createFileRoute("/${n.id}")({
+  component: ${n.Name}Layout,
 });
 
-function ${Name}Layout() {
+function ${n.Name}Layout() {
   return <Outlet />;
 }
 `;
 }
 
-function indexRoute(id: string): string {
-  const Name = pascal(id);
-  const name = camel(id);
-
+function indexRoute(n: Names): string {
   return `import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ${Name}Overview } from "@/components/${id}/${Name}Overview";
-import { ${name}QueryOptions } from "@/data/${id}";
+import { ${n.Name}Table } from "@/components/${n.id}/${n.Name}Table";
+import { ${n.ids}QueryOptions } from "@/data/${n.id}";
 
-/** Index page of the ${upper(id)} module: awaits its data before painting. */
-export const Route = createFileRoute("/${id}/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(${name}QueryOptions),
-  component: ${Name}Page,
+export const Route = createFileRoute("/${n.id}/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(${n.ids}QueryOptions),
+  component: ${n.Name}ListPage,
 });
 
-function ${Name}Page() {
-  const { data } = useSuspenseQuery(${name}QueryOptions);
+function ${n.Name}ListPage() {
+  const { data } = useSuspenseQuery(${n.ids}QueryOptions);
 
   return (
-    <div className="flex flex-col gap-2 p-2">
-      <${Name}Overview records={data.records} total={data.totalLabel} />
+    <div className="p-2">
+      <${n.Name}Table rows={data.${n.ids}} total={data.totalLabel} />
     </div>
   );
 }
 `;
 }
 
-function moduleEntry(id: string, label: string, count: string): string {
-  return `  {
-    id: "${id}",
-    label: "${label}",
-    path: "/${id}",
-    count: "${count}",
-    description: "Replace this description with the module's purpose.",
-    ribbon: [
-      {
-        label: "${pascal(id)}",
-        actions: [
-          {
-            id: "new-record",
-            size: "large",
-            icon: "plus",
-            label: "New\\nRecord",
-            tone: "accent",
-            notify: { kind: "INFO", title: "NEW RECORD", message: "Record composer" },
-          },
-        ],
-      },
-    ],
-  },
+function paramLayoutRoute(n: Names): string {
+  return `import { createFileRoute, Outlet } from "@tanstack/react-router";
+
+/**
+ * Layout of \`/${n.id}/$${n.param}\`. It exists so the detail (index) and the edit
+ * page live under the same segment: a route with children must render its
+ * <Outlet/>, or the child silently never paints.
+ */
+export const Route = createFileRoute("/${n.id}/$${n.param}")({
+  component: ${n.Name}DetailLayout,
+});
+
+function ${n.Name}DetailLayout() {
+  return <Outlet />;
+}
 `;
 }
 
-function pageEntry(moduleId: string, pageId: string, label: string): string {
-  return `  {
-    id: "${pageId}",
-    moduleId: "${moduleId}",
-    label: "${label}",
-    path: "/${moduleId}/${pageId}",
-  },
+function detailRoute(n: Names): string {
+  return `import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Panel } from "@/components/ui/Panel";
+import type { StatusTone } from "@/components/ui/StatusBadge";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import type { ${n.Name}Status } from "@/data/${n.id}";
+import { ${n.name}QueryOptions } from "@/data/${n.id}";
+
+const STATUS_TONE: Record<${n.Name}Status, StatusTone> = {
+  DRAFT: "warning",
+  POSTED: "positive",
+  ARCHIVED: "neutral",
+};
+
+/** Detail page: reads the row by its route param. */
+export const Route = createFileRoute("/${n.id}/$${n.param}/")({
+  loader: ({ context, params }) =>
+    context.queryClient.ensureQueryData(${n.name}QueryOptions(params.${n.param})),
+  component: ${n.Name}DetailPage,
+});
+
+function ${n.Name}DetailPage() {
+  const params = Route.useParams();
+  const { data: row } = useSuspenseQuery(${n.name}QueryOptions(params.${n.param}));
+
+  return (
+    <div className="flex flex-col gap-2 p-2">
+      <Panel
+        title={\`${n.NAME} • \${row.id}\`}
+        actions={<StatusBadge tone={STATUS_TONE[row.status]}>{row.status}</StatusBadge>}
+      >
+        <div className="flex flex-col gap-1 p-3">
+          <span className="font-mono text-[12px] text-ink-bright">{row.name}</span>
+          <span className="font-mono text-[10px] text-ink-dim">
+            Replace this panel with the ${n.name} detail.
+          </span>
+        </div>
+      </Panel>
+      <Link
+        to="/${n.id}"
+        className="font-mono text-[11px] text-orange underline-offset-2 hover:underline"
+      >
+        ← BACK TO ${n.NAME}S
+      </Link>
+    </div>
+  );
+}
+`;
+}
+
+function newRoute(n: Names): string {
+  return `import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { empty${n.Name}, ${n.Name}Form } from "@/components/${n.id}/${n.Name}Form";
+import { useCreate${n.Name} } from "@/components/${n.id}/use-${n.entity}-mutations";
+
+export const Route = createFileRoute("/${n.id}/new")({
+  component: New${n.Name}Page,
+});
+
+function New${n.Name}Page() {
+  const navigate = useNavigate();
+  const create = useCreate${n.Name}((row) => {
+    void navigate({ to: "/${n.id}/$${n.param}", params: { ${n.param}: row.id } });
+  });
+
+  return (
+    <div className="p-2">
+      <${n.Name}Form
+        defaultValues={empty${n.Name}()}
+        submitLabel="CREATE ${n.NAME}"
+        isPending={create.isPending}
+        // The hook already toasts the failure; the form stays open for a retry.
+        onSubmit={(input) => create.mutateAsync(input).catch(() => undefined)}
+        onCancel={() => void navigate({ to: "/${n.id}" })}
+      />
+    </div>
+  );
+}
+`;
+}
+
+function editRoute(n: Names): string {
+  return `import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ${n.Name}Form } from "@/components/${n.id}/${n.Name}Form";
+import { useUpdate${n.Name} } from "@/components/${n.id}/use-${n.entity}-mutations";
+import type { ${n.Name}Input } from "@/data/${n.id}";
+import { ${n.name}QueryOptions } from "@/data/${n.id}";
+
+export const Route = createFileRoute("/${n.id}/$${n.param}/edit")({
+  loader: ({ context, params }) =>
+    context.queryClient.ensureQueryData(${n.name}QueryOptions(params.${n.param})),
+  component: Edit${n.Name}Page,
+});
+
+function Edit${n.Name}Page() {
+  const params = Route.useParams();
+  const { data: row } = useSuspenseQuery(${n.name}QueryOptions(params.${n.param}));
+  const navigate = useNavigate();
+  const update = useUpdate${n.Name}((saved) => {
+    void navigate({ to: "/${n.id}/$${n.param}", params: { ${n.param}: saved.id } });
+  });
+
+  if (row.status === "ARCHIVED") {
+    return (
+      <div className="p-2">
+        <p className="font-mono text-[11px] text-ink-dim">
+          {row.id} is archived and cannot be edited.{" "}
+          <Link
+            to="/${n.id}/$${n.param}"
+            params={{ ${n.param}: row.id }}
+            className="text-orange"
+          >
+            BACK TO DETAIL
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
+  // Archived rows never reach the form: the input contract has no ARCHIVED status.
+  const defaults: ${n.Name}Input = { name: row.name, status: row.status };
+
+  return (
+    <div className="p-2">
+      <${n.Name}Form
+        defaultValues={defaults}
+        submitLabel="SAVE CHANGES"
+        isPending={update.isPending}
+        onSubmit={(input) => update.mutateAsync({ id: row.id, input }).catch(() => undefined)}
+        onCancel={() =>
+          void navigate({ to: "/${n.id}/$${n.param}", params: { ${n.param}: row.id } })
+        }
+      />
+    </div>
+  );
+}
 `;
 }
 
@@ -353,10 +782,38 @@ function ${Module}${Page}Page() {
 `;
 }
 
-/** Formats what was written and refreshes the route tree, so the repo stays green. */
-async function finalize(root: string, files: string[]): Promise<void> {
-  await format(root, files);
-  await generateRouteTree(root);
+// -------------------------------------------------------------------- registry
+
+function moduleEntry(n: Names, label: string, count: string): string {
+  return `  {
+    id: "${n.id}",
+    label: "${label}",
+    path: "/${n.id}",
+    count: "${count}",
+    description: "Replace this description with the module's purpose.",
+  },
+`;
+}
+
+function pageEntry(moduleId: string, pageId: string, label: string): string {
+  return `  {
+    id: "${pageId}",
+    moduleId: "${moduleId}",
+    label: "${label}",
+    path: "/${moduleId}/${pageId}",
+  },
+`;
+}
+
+function newPageEntry(n: Names): string {
+  return `  {
+    id: "new",
+    moduleId: "${n.id}",
+    label: "NEW ${n.NAME}",
+    path: "/${n.id}/new",
+    hidden: true,
+  },
+`;
 }
 
 // -------------------------------------------------------------------- commands
@@ -365,29 +822,32 @@ export async function generateModule(id: string, options: Options): Promise<stri
   if (!ID_PATTERN.test(id)) {
     throw new Error(`Invalid module id "${id}": use lowercase letters, digits and dashes.`);
   }
+  const entity = options.entity ?? id;
+  if (!ID_PATTERN.test(entity)) {
+    throw new Error(`Invalid entity "${entity}": use lowercase letters, digits and dashes.`);
+  }
   if ((await modulesSection(options.root)).includes(`id: "${id}"`)) {
     throw new Error(`Module "${id}" is already registered in src/config/navigation.ts.`);
   }
 
+  const n = namesFor(id, entity);
   const label = sanitizeLabel(options.label ?? upper(id)) || upper(id);
   const count = sanitizeLabel(options.count ?? "—") || "—";
 
   const written = [
-    await writeNew(options.root, `src/routes/${id}.tsx`, layoutRoute(id)),
-    await writeNew(options.root, `src/routes/${id}.index.tsx`, indexRoute(id)),
-    await writeNew(options.root, `src/data/${id}.ts`, dataFile(id)),
-    await writeNew(
-      options.root,
-      `src/components/${id}/${pascal(id)}Overview.tsx`,
-      overviewComponent(id),
-    ),
+    await writeNew(options.root, `src/routes/${id}.tsx`, layoutRoute(n)),
+    await writeNew(options.root, `src/routes/${id}.index.tsx`, indexRoute(n)),
+    await writeNew(options.root, `src/routes/${id}.$${n.param}.tsx`, paramLayoutRoute(n)),
+    await writeNew(options.root, `src/routes/${id}.$${n.param}.index.tsx`, detailRoute(n)),
+    await writeNew(options.root, `src/data/${id}.ts`, dataFile(n)),
+    await writeNew(options.root, `src/components/${id}/${n.Name}Table.tsx`, tableComponent(n)),
   ];
 
   await insertAtMarker(
     options.root,
     "src/config/navigation.ts",
     MARKER_MODULES,
-    moduleEntry(id, label, count),
+    moduleEntry(n, label, count),
   );
   await finalize(options.root, [...written, "src/config/navigation.ts"]);
 
@@ -430,9 +890,64 @@ export async function generatePage(
   return written;
 }
 
+export async function generateForm(
+  moduleId: string,
+  entity: string,
+  options: Options,
+): Promise<string[]> {
+  if (!ID_PATTERN.test(moduleId) || !ID_PATTERN.test(entity)) {
+    throw new Error("Invalid id: use lowercase letters, digits and dashes.");
+  }
+  if (!(await modulesSection(options.root)).includes(`id: "${moduleId}"`)) {
+    throw new Error(`Unknown module "${moduleId}": run "bun run gen module ${moduleId}" first.`);
+  }
+
+  const n = namesFor(moduleId, entity);
+
+  // The data contract and the param layout come from `gen module`; refuse instead of
+  // emitting imports that would not compile.
+  for (const required of [`src/data/${moduleId}.ts`, `src/routes/${moduleId}.$${n.param}.tsx`]) {
+    if (!existsSync(path.join(options.root, required))) {
+      throw new Error(
+        `Missing ${required}. The form needs the CRUD contract and the param layout: run "bun run gen module ${moduleId} --entity ${entity}" first.`,
+      );
+    }
+  }
+  if ((await pagesSection(options.root)).includes(`path: "/${moduleId}/new"`)) {
+    throw new Error(`Module "${moduleId}" already has a create page.`);
+  }
+
+  for (const relative of [
+    `src/components/${moduleId}/use-${entity}-mutations.ts`,
+    `src/components/${moduleId}/${n.Name}Form.tsx`,
+    `src/routes/${moduleId}.new.tsx`,
+    `src/routes/${moduleId}.$${n.param}.edit.tsx`,
+  ]) {
+    if (existsSync(path.join(options.root, relative))) {
+      throw new Error(`${relative} already exists — refusing to overwrite.`);
+    }
+  }
+
+  const written = [
+    await writeNew(
+      options.root,
+      `src/components/${moduleId}/use-${entity}-mutations.ts`,
+      mutationsHook(n),
+    ),
+    await writeNew(options.root, `src/components/${moduleId}/${n.Name}Form.tsx`, formComponent(n)),
+    await writeNew(options.root, `src/routes/${moduleId}.new.tsx`, newRoute(n)),
+    await writeNew(options.root, `src/routes/${moduleId}.$${n.param}.edit.tsx`, editRoute(n)),
+  ];
+
+  await insertAtMarker(options.root, "src/config/navigation.ts", MARKER_PAGES, newPageEntry(n));
+  await finalize(options.root, [...written, "src/config/navigation.ts"]);
+
+  return written;
+}
+
 // ------------------------------------------------------------------------- CLI
 
-const FLAGS = new Set(["--label", "--count", "--root"]);
+const FLAGS = new Set(["--label", "--count", "--entity", "--root"]);
 
 function parseArgs(argv: string[]): { command?: string; positional: string[]; options: Options } {
   const positional: string[] = [];
@@ -455,6 +970,8 @@ function parseArgs(argv: string[]): { command?: string; positional: string[]; op
       options.label = value;
     } else if (arg === "--count") {
       options.count = value;
+    } else if (arg === "--entity") {
+      options.entity = value;
     } else {
       options.root = path.resolve(value);
     }
@@ -464,16 +981,18 @@ function parseArgs(argv: string[]): { command?: string; positional: string[]; op
 }
 
 const USAGE = `Usage:
-  bun run gen module <id> [--label "LABEL"] [--count "—"]
+  bun run gen module <id> [--entity <singular>] [--label "LABEL"] [--count "—"]
   bun run gen page <module> <page> [--label "LABEL"]
+  bun run gen form <module> <entity>
 
 Options:
-  --root <dir>   Scaffold into another checkout (used by the generator tests).`;
+  --entity <name>  Singular name used for types and hooks ("entry" for "entries").
+  --root <dir>     Scaffold into another checkout (used by the generator tests).`;
 
 async function main(): Promise<void> {
   const { command, positional, options } = parseArgs(Bun.argv.slice(2));
 
-  if (command !== "module" && command !== "page") {
+  if (command !== "module" && command !== "page" && command !== "form") {
     console.error(USAGE);
     process.exit(1);
   }
@@ -481,20 +1000,21 @@ async function main(): Promise<void> {
   const written =
     command === "module"
       ? await generateModule(positional[0], options)
-      : await generatePage(positional[0], positional[1], options);
+      : command === "page"
+        ? await generatePage(positional[0], positional[1], options)
+        : await generateForm(positional[0], positional[1], options);
 
-  const verb = command === "module" ? "Module" : "Page";
-  const name = command === "module" ? positional[0] : `${positional[0]} / ${positional[1]}`;
-  console.log(`${verb} "${name}" scaffolded:\n`);
+  const name = positional.filter(Boolean).join(" / ");
+  console.log(`${command} "${name}" scaffolded:\n`);
   for (const file of written) {
     console.log(`  + ${file}`);
   }
   console.log("  ~ src/config/navigation.ts");
   console.log("  ~ src/routeTree.gen.ts (regenerated)\n");
   console.log(
-    command === "module"
-      ? "Next: fill the data fixture and the widgets, then run bun run dev."
-      : "Next: fill the page content, then run bun run dev.",
+    command === "form"
+      ? "Next: replace the form fields to match the input contract, then run bun run dev."
+      : "Next: fill the data fixture and the widgets, then run bun run dev.",
   );
 }
 
