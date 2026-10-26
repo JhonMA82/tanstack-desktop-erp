@@ -104,7 +104,9 @@ Un recurso = interfaz de dominio escrita a mano + schema `zod` anotado `z.ZodTyp
   fallar el typecheck sin causa visible. El generador fija `tmpDir` dentro del root: por defecto lo
   resuelve contra `process.cwd()` y falla al scaffol dear en otro checkout.
 - `bun run init` rebrandea (`config/app.ts`, `package.json`, README), borra los task specs temporales y
-  crea o reinicia el historial git (también cuando la copia llega sin `.git`). **Deja `SPEC.md` intacto**: documenta la arquitectura que el proyecto
+  crea o reinicia el historial git (también cuando la copia llega sin `.git`) y el commit inicial
+  funciona sin identidad de git configurada, como en un runner de CI: si no hay `user.email`, usa una de
+  relleno con `-c` en vez de abortar. **Deja `SPEC.md` intacto**: documenta la arquitectura que el proyecto
   hereda y sus reglas siguen aplicando. Se niega a correr sobre este repo plantilla sin `--yes`.
 - `routeTree.gen.ts` y `bun.lock` los generan herramientas: nunca se editan a mano.
 

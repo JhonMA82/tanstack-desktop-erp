@@ -16,6 +16,34 @@ import {
 
 const repoRoot = path.resolve(import.meta.dir, "..");
 
+/** Runs `fn` with no git identity configured, the way a CI runner looks. */
+function withoutGitIdentity<T>(fn: () => T): T {
+  const saved = {
+    global: process.env.GIT_CONFIG_GLOBAL,
+    system: process.env.GIT_CONFIG_SYSTEM,
+    noSystem: process.env.GIT_CONFIG_NOSYSTEM,
+  };
+  process.env.GIT_CONFIG_GLOBAL = "/dev/null";
+  process.env.GIT_CONFIG_SYSTEM = "/dev/null";
+  process.env.GIT_CONFIG_NOSYSTEM = "1";
+
+  try {
+    return fn();
+  } finally {
+    for (const [key, value] of Object.entries({
+      GIT_CONFIG_GLOBAL: saved.global,
+      GIT_CONFIG_SYSTEM: saved.system,
+      GIT_CONFIG_NOSYSTEM: saved.noSystem,
+    })) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  }
+}
+
 const VALUES: InitValues = {
   name: "Sales Ops",
   slug: "sales-ops",
@@ -154,7 +182,7 @@ describe("initProject without an inherited repository", () => {
     // A tarball / "Use this template" copy arrives without .git.
     expect(existsSync(path.join(root, ".git"))).toBe(false);
 
-    const changed = initProject(root, VALUES);
+    const changed = withoutGitIdentity(() => initProject(root, VALUES));
 
     expect(changed).toContain("+ .git (repository created)");
     const log = Bun.spawnSync(["git", "log", "--oneline"], { cwd: root, stdout: "pipe" });
@@ -177,7 +205,7 @@ describe("resetGitHistory", () => {
   });
 
   test("replaces the inherited history with one initial commit", () => {
-    resetGitHistory(root);
+    withoutGitIdentity(() => resetGitHistory(root));
 
     const log = Bun.spawnSync(["git", "log", "--oneline"], { cwd: root, stdout: "pipe" });
     const lines = new TextDecoder().decode(log.stdout).trim().split("\n");

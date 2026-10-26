@@ -142,15 +142,31 @@ function runGit(root: string, args: string[]): void {
 }
 
 /**
+ * `-c` overrides for `git commit` when no identity is configured. A fresh machine
+ * or a CI runner has none, and `git commit` would abort with "unknown author".
+ * A configured identity always wins; this only fills the gap.
+ */
+function identityArgs(root: string): string[] {
+  const configured = Bun.spawnSync(["git", "config", "user.email"], {
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  return configured.exitCode === 0
+    ? []
+    : ["-c", "user.name=Template", "-c", "user.email=template@localhost"];
+}
+
+/**
  * Starts a fresh history with a single initial commit. Works whether the copy
  * brought the template's `.git` or not (tarballs and "Use this template" clones
- * ship without it).
+ * ship without it) and whether git has an identity configured.
  */
 export function resetGitHistory(root: string): void {
   rmSync(path.join(root, ".git"), { recursive: true, force: true });
   runGit(root, ["init", "-q"]);
   runGit(root, ["add", "-A"]);
-  runGit(root, ["commit", "-q", "-m", "chore: initialize from template"]);
+  runGit(root, [...identityArgs(root), "commit", "-q", "-m", "chore: initialize from template"]);
 }
 
 // ------------------------------------------------------------------- the script
