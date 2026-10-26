@@ -118,6 +118,88 @@ function read(root: string, relative: string): string {
   return readFileSync(path.join(root, relative), "utf8");
 }
 
+/** Files that only exist to bootstrap: a derived project must not keep them. */
+const BOOTSTRAP_FILES = ["scripts/init.ts", "scripts/init.test.ts"];
+
+/**
+ * Removes the one-shot bootstrap — this script, its test and its `package.json`
+ * entry. `gen` and `routes:generate` stay: they are the tools a derived project
+ * keeps using. The user chose this: `init` rewrites the brand and the history, so
+ * leaving it around in a live project is a trap.
+ */
+function removeBootstrap(root: string): string[] {
+  const changed: string[] = [];
+
+  for (const relative of BOOTSTRAP_FILES) {
+    const target = path.join(root, relative);
+    if (existsSync(target)) {
+      rmSync(target, { force: true });
+      changed.push(`- ${relative}`);
+    }
+  }
+
+  const packageJson = JSON.parse(read(root, "package.json")) as {
+    scripts?: Record<string, string>;
+  };
+  if (packageJson.scripts && "init" in packageJson.scripts) {
+    delete packageJson.scripts.init;
+    write(root, "package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
+    changed.push('~ package.json (sin script "init")');
+  }
+
+  return changed;
+}
+
+const README_INTRO = `## Empezar a trabajar
+
+El proyecto ya está inicializado: el nombre, la marca y la empresa salen de \`src/config/app.ts\`, y el
+historial de git arranca en su commit inicial (la herramienta de bootstrap se eliminó a sí misma).
+Para cada feature:
+`;
+
+/** Removes every doc line that still advertises the deleted command. */
+function dropInitLines(source: string): string {
+  return source
+    .split("\n")
+    .filter((line) => !/^\|\s*`bun run init`/.test(line)) // command-table row
+    .filter((line) => !/^\s*bun run init\b/.test(line)) // bash example
+    .join("\n");
+}
+
+/** Drops the bootstrap step from the docs the new project inherits. */
+function pruneDocs(root: string): string[] {
+  const changed: string[] = [];
+
+  const readmePath = path.join(root, "README.md");
+  if (existsSync(readmePath)) {
+    const before = readFileSync(readmePath, "utf8");
+    const filtered = dropInitLines(before);
+    const start = filtered.indexOf("## Empezar un proyecto");
+    const genBlock = filtered.indexOf("```bash\nbun run gen module", start);
+    const after =
+      start !== -1 && genBlock !== -1
+        ? `${filtered.slice(0, start)}${README_INTRO}\n${filtered.slice(genBlock)}`
+        : filtered;
+
+    if (after !== before) {
+      writeFileSync(readmePath, after, "utf8");
+      changed.push("~ README.md (sin el paso de bootstrap)");
+    }
+  }
+
+  const agentsPath = path.join(root, "AGENTS.md");
+  if (existsSync(agentsPath)) {
+    const before = readFileSync(agentsPath, "utf8");
+    const after = dropInitLines(before);
+    if (after !== before) {
+      writeFileSync(agentsPath, after, "utf8");
+      changed.push("~ AGENTS.md (sin `bun run init`)");
+    }
+  }
+
+  return changed;
+}
+
 /** Removes the temporary task specs; the durable specs stay. */
 function removeTaskSpecs(root: string): string[] {
   const directory = path.join(root, ".thinkrail", "context");
@@ -199,6 +281,10 @@ export function initProject(root: string, values: InitValues, options: InitOptio
   for (const file of removeTaskSpecs(root)) {
     changed.push(`- .thinkrail/context/${file}`);
   }
+
+  // A derived project must not keep the bootstrap, and its docs must stop pointing at it.
+  changed.push(...removeBootstrap(root));
+  changed.push(...pruneDocs(root));
 
   if (options.git !== false) {
     const hadHistory = existsSync(path.join(root, ".git"));

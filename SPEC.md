@@ -106,7 +106,12 @@ Un recurso = interfaz de dominio escrita a mano + schema `zod` anotado `z.ZodTyp
 - `bun run init` rebrandea (`config/app.ts`, `package.json`, README), borra los task specs temporales y
   crea o reinicia el historial git (también cuando la copia llega sin `.git`) y el commit inicial
   funciona sin identidad de git configurada, como en un runner de CI: si no hay `user.email`, usa una de
-  relleno con `-c` en vez de abortar. **Deja `SPEC.md` intacto**: documenta la arquitectura que el proyecto
+  relleno con `-c` en vez de abortar.
+- **`init` es de una sola vez y se autodestruye**: borra `scripts/init.ts`, `scripts/init.test.ts` y su
+  entrada en `package.json`, y limpia las menciones en README y `AGENTS.md` (la sección de arranque se
+  reescribe y la fila de la tabla desaparece). Deja `SPEC.md` intacto: describe cómo se creó el proyecto.
+  `gen` y `routes:generate` se quedan porque son herramientas de uso continuo. La razón es de seguridad:
+  en un proyecto vivo, `init` reescribiría la marca y borraría la historia. **Deja `SPEC.md` intacto**: documenta la arquitectura que el proyecto
   hereda y sus reglas siguen aplicando. Se niega a correr sobre este repo plantilla sin `--yes`.
 - `routeTree.gen.ts` y `bun.lock` los generan herramientas: nunca se editan a mano.
 

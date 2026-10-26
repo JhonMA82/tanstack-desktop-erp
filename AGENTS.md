@@ -25,7 +25,7 @@ y el roce que encontró.
 | `bun run gen module <id>` | scaffold de un módulo completo |
 | `bun run gen page <module> <page>` | scaffold de una página anidada (submenú) |
 | `bun run gen` | usage |
-| `bun run init` | rebrand + historia nueva; crea el repo si la copia no trae `.git` |
+| `bun run init` | rebrand + historia nueva; crea el repo si la copia no trae `.git`. Al terminar se borra a sí mismo (script, test y entrada de `package.json`), así que en un proyecto derivado ya no existe |
 | `bun run routes:generate` | regenera `routeTree.gen.ts` sin arrancar Vite |
 
 ## Mapa de capas

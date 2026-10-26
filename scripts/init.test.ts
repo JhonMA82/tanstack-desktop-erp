@@ -124,11 +124,16 @@ describe("initProject", () => {
   beforeAll(async () => {
     root = await mkdtemp(path.join(tmpdir(), "init-test-"));
     await mkdir(path.join(root, "src/config"), { recursive: true });
+    await mkdir(path.join(root, "scripts"), { recursive: true });
     await mkdir(path.join(root, ".thinkrail/context"), { recursive: true });
     await cp(path.join(repoRoot, "src/config/app.ts"), path.join(root, "src/config/app.ts"));
     await cp(path.join(repoRoot, "README.md"), path.join(root, "README.md"));
     await cp(path.join(repoRoot, "package.json"), path.join(root, "package.json"));
     await cp(path.join(repoRoot, "SPEC.md"), path.join(root, "SPEC.md"));
+    await cp(path.join(repoRoot, "AGENTS.md"), path.join(root, "AGENTS.md"));
+    // The bootstrap that must disappear from a derived project.
+    await writeFile(path.join(root, "scripts/init.ts"), "// bootstrap", "utf8");
+    await writeFile(path.join(root, "scripts/init.test.ts"), "// bootstrap test", "utf8");
     await writeFile(path.join(root, ".thinkrail/context/TASK-demo.md"), "# temp", "utf8");
     await writeFile(path.join(root, ".thinkrail/context/keep.txt"), "durable", "utf8");
     specBefore = await readFile(path.join(root, "SPEC.md"), "utf8");
@@ -145,10 +150,36 @@ describe("initProject", () => {
     expect(changed).toContain("package.json");
     expect(changed).toContain("README.md");
     expect(changed).toContain("- .thinkrail/context/TASK-demo.md");
+    expect(changed).toContain("- scripts/init.ts");
+    expect(changed).toContain("- scripts/init.test.ts");
+    expect(changed).toContain('~ package.json (sin script "init")');
+    expect(changed).toContain("~ README.md (sin el paso de bootstrap)");
+    expect(changed).toContain("~ AGENTS.md (sin `bun run init`)");
 
     expect(existsSync(path.join(root, ".thinkrail/context/TASK-demo.md"))).toBe(false);
     expect(existsSync(path.join(root, ".thinkrail/context/keep.txt"))).toBe(true);
     expect(changed).not.toContain("~ .git (history reset)");
+  });
+
+  test("removes the one-shot bootstrap and keeps the generator", async () => {
+    expect(existsSync(path.join(root, "scripts/init.ts"))).toBe(false);
+    expect(existsSync(path.join(root, "scripts/init.test.ts"))).toBe(false);
+
+    const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
+    expect(packageJson.scripts.init).toBeUndefined();
+    expect(packageJson.scripts.gen).toBe("bun scripts/gen.ts");
+    expect(packageJson.scripts["routes:generate"]).toBeDefined();
+  });
+
+  test("drops the bootstrap from the inherited docs", async () => {
+    const readme = await readFile(path.join(root, "README.md"), "utf8");
+    expect(readme).not.toContain("bun run init");
+    expect(readme).toContain("## Empezar a trabajar");
+    expect(readme).toContain('bun run gen module inventory --label "INVENTORY"');
+
+    const agents = await readFile(path.join(root, "AGENTS.md"), "utf8");
+    expect(agents).not.toContain("bun run init");
+    expect(agents).toContain("bun run gen module");
   });
 
   test("leaves SPEC.md untouched: it documents the inherited architecture", async () => {
@@ -170,6 +201,7 @@ describe("initProject without an inherited repository", () => {
   beforeAll(async () => {
     root = await mkdtemp(path.join(tmpdir(), "init-fresh-test-"));
     await mkdir(path.join(root, "src/config"), { recursive: true });
+    await mkdir(path.join(root, "scripts"), { recursive: true });
     await cp(path.join(repoRoot, "src/config/app.ts"), path.join(root, "src/config/app.ts"));
     await cp(path.join(repoRoot, "package.json"), path.join(root, "package.json"));
   });

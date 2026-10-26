@@ -19,7 +19,9 @@ bun run dev
 
 `init` reescribe `src/config/app.ts`, `package.json` y el título del README, borra los specs de tarea
 temporales, **crea o reinicia** el historial git y deja `SPEC.md` intacto (documenta la arquitectura que
-heredás). Después, para cada feature:
+heredás). Al terminar **se borra a sí mismo** —script, test y entrada de `package.json`— y limpia su
+mención en el README y en `AGENTS.md`: en el proyecto derivado no queda una herramienta capaz de
+rebrandearlo o borrarle la historia. Después, para cada feature:
 
 ```bash
 bun run gen module inventory --label "INVENTORY"   # módulo completo
@@ -67,7 +69,7 @@ editan a mano.
 | `bun run format` | `biome check --write .` (aplica fixes seguros) |
 | `bun test` | tests unitarios y de integración (bun test, sin DOM) |
 | `bun run gen` | scaffold de módulos y páginas (ver `AGENTS.md`) |
-| `bun run init` | rebrand + historial nuevo para un proyecto recién creado |
+| `bun run init` | rebrand + historial nuevo; se elimina a sí mismo al terminar |
 | `bun run routes:generate` | regenera `routeTree.gen.ts` sin arrancar Vite |
 | `bun run hooks:install` | activa el hook pre-commit de `.githooks` (también lo hace `bun install`) |
 
