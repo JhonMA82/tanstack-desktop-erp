@@ -1,14 +1,53 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import type { ToastInput } from "@/components/feedback/toaster";
 import { useToast } from "@/components/feedback/toaster";
 import { Icon } from "@/components/ui/Icon";
+import { Menu, type MenuItem } from "@/components/ui/Menu";
 import { cn } from "@/lib/cn";
 import type { IconName } from "@/lib/icons";
-import { useShell } from "./shell-context";
+import { PERIODS, useShell } from "./shell-context";
+
+/** Document actions offered both as ribbon buttons and as the New Invoice menu. */
+interface DocumentAction {
+  id: string;
+  icon: IconName;
+  label: string;
+  toast: ToastInput;
+}
+
+const NEW_DOCUMENTS: DocumentAction[] = [
+  {
+    id: "bill",
+    icon: "bill",
+    label: "New Bill",
+    toast: { kind: "INFO", title: "NEW BILL", message: "Bill composer — BILL-2024-090" },
+  },
+  {
+    id: "expense",
+    icon: "expense",
+    label: "New Expense",
+    toast: {
+      kind: "INFO",
+      title: "NEW EXPENSE",
+      message: "Expense composer — EXP-2024-157 — $0.00",
+    },
+  },
+  {
+    id: "credit-note",
+    icon: "dupe",
+    label: "Credit Note",
+    toast: {
+      kind: "INFO",
+      title: "CREDIT NOTE",
+      message: "Credit Note — CN-2024-013 — $400.00 adjustment",
+    },
+  },
+];
 
 /**
- * Blender-style ribbon (84px, collapsible to 28px) with the groups extracted
+ * Blender-style ribbon (96px, collapsible to 28px) with the groups extracted
  * from the source bundle: ACCOUNTING (Document/Actions/Ledger/View—Period),
  * HRM (Employee/Actions/Payroll/View) and the shared
  * Metrics/View—Range groups used by DASHBOARD, PAYROLL, INVENTORY,
@@ -16,7 +55,7 @@ import { useShell } from "./shell-context";
  * exactly like the source.
  */
 export function Ribbon() {
-  const { activeModule, ribbonCollapsed, period, cyclePeriod, view, setView } = useShell();
+  const { activeModule, ribbonCollapsed, period, setPeriod, view, setView } = useShell();
   const { push } = useToast();
   const navigate = useNavigate();
   const [employeeFilter, setEmployeeFilter] = useState<string>("ALL");
@@ -32,7 +71,40 @@ export function Ribbon() {
     );
   }
 
-  const periodDrop = <PeriodDrop period={period} onCycle={cyclePeriod} />;
+  const periodMenu = (
+    <Menu
+      label="Period"
+      variant="pill"
+      className="min-w-24"
+      items={PERIODS.map((option) => ({
+        id: `period-${option}`,
+        label: option,
+        active: option === period,
+        onSelect: () => setPeriod(option),
+      }))}
+    />
+  );
+  const viewMenu: MenuItem[] = [
+    {
+      id: "view-ledger",
+      label: "Ledger",
+      active: view === "LEDGER",
+      onSelect: () => setView("LEDGER"),
+    },
+    { id: "view-grid", label: "Grid", active: view === "GRID", onSelect: () => setView("GRID") },
+    {
+      id: "view-statements",
+      label: "Statements",
+      active: view === "STATEMENTS",
+      onSelect: () => setView("STATEMENTS"),
+    },
+  ];
+  const documentMenu: MenuItem[] = NEW_DOCUMENTS.map((action) => ({
+    id: action.id,
+    label: action.label,
+    icon: action.icon,
+    onSelect: () => push(action.toast),
+  }));
 
   if (activeModule.id === "accounting") {
     return (
@@ -43,6 +115,7 @@ export function Ribbon() {
             line1="New"
             line2="Invoice"
             accent
+            menu={documentMenu}
             onClick={() =>
               push({
                 kind: "INFO",
@@ -52,43 +125,16 @@ export function Ribbon() {
             }
           />
           <div className="flex flex-col gap-0.5">
-            <SmallButton
-              icon="bill"
-              onClick={() =>
-                push({ kind: "INFO", title: "NEW BILL", message: "Bill composer — BILL-2024-090" })
-              }
-            >
-              New Bill
-            </SmallButton>
-            <SmallButton
-              icon="expense"
-              onClick={() =>
-                push({
-                  kind: "INFO",
-                  title: "NEW EXPENSE",
-                  message: "Expense composer — EXP-2024-157 — $0.00",
-                })
-              }
-            >
-              New Expense
-            </SmallButton>
-            <SmallButton
-              icon="dupe"
-              onClick={() =>
-                push({
-                  kind: "INFO",
-                  title: "CREDIT NOTE",
-                  message: "Credit Note — CN-2024-013 — $400.00 adjustment",
-                })
-              }
-            >
-              Credit Note
-            </SmallButton>
+            {NEW_DOCUMENTS.map((action) => (
+              <SmallButton key={action.id} icon={action.icon} onClick={() => push(action.toast)}>
+                {action.label}
+              </SmallButton>
+            ))}
           </div>
         </RibbonGroup>
         <RibbonSep />
         <RibbonGroup label="Actions">
-          <div className="flex flex-col gap-0.5">
+          <div className="grid grid-cols-2 gap-0.5">
             <SmallButton
               icon="post"
               onClick={() =>
@@ -134,6 +180,7 @@ export function Ribbon() {
             line1="Grid"
             line2="View"
             active={view === "GRID"}
+            menu={viewMenu}
             onClick={() => setView("GRID")}
           />
           <LargeButton
@@ -144,7 +191,7 @@ export function Ribbon() {
             onClick={() => setView("STATEMENTS")}
           />
           <div className="flex flex-col gap-1">
-            {periodDrop}
+            {periodMenu}
             <SmallButton icon="filter" active={view === "LEDGER"} onClick={() => setView("LEDGER")}>
               Filter
             </SmallButton>
@@ -239,13 +286,13 @@ export function Ribbon() {
         <LargeButton icon="chart" line1="Metrics" line2="Live" active />
         <div className="flex flex-col gap-0.5">
           <SmallButton icon="export">Export</SmallButton>
-          <SmallButton icon="filter">Filter ▾</SmallButton>
+          <SmallButton icon="filter">Filter</SmallButton>
         </div>
       </RibbonGroup>
       <RibbonSep />
       <RibbonGroup label="View — Range">
         <div className="flex flex-col gap-1">
-          {periodDrop}
+          {periodMenu}
           <SmallButton icon="hist">Histogram</SmallButton>
         </div>
         <LargeButton
@@ -269,7 +316,7 @@ export function Ribbon() {
 
 function RibbonRow({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-[84px] min-h-[84px] items-stretch overflow-x-auto border-b border-border bg-panel transition-[height] duration-100">
+    <div className="flex h-[96px] min-h-[96px] items-stretch overflow-x-auto border-b border-border bg-panel transition-[height] duration-100">
       {children}
     </div>
   );
@@ -300,6 +347,8 @@ interface LargeButtonProps {
   /** Icon size inside the 22px box (source uses 14, some filters use 12). */
   size?: number;
   onClick?: () => void;
+  /** Variants of this command: adds the chevron menu on the icon box corner. */
+  menu?: MenuItem[];
 }
 
 function LargeButton({
@@ -310,33 +359,41 @@ function LargeButton({
   active = false,
   size = 14,
   onClick,
+  menu,
 }: LargeButtonProps) {
   const highlighted = accent || active;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex h-[58px] w-12 min-w-12 cursor-pointer flex-col items-center justify-center gap-[3px] rounded-[2px] border transition-colors",
-        highlighted
-          ? "border-orange bg-panel3 text-ink-bright"
-          : "border-transparent text-ink-dim hover:border-border hover:bg-panel3 hover:text-ink",
-      )}
-    >
-      <span
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={onClick}
         className={cn(
-          "flex size-[22px] items-center justify-center rounded-[2px] border bg-panel2",
-          highlighted ? "border-orange text-orange" : "border-border",
+          "flex h-[58px] w-12 min-w-12 cursor-pointer flex-col items-center justify-center gap-[3px] rounded-[2px] border transition-colors",
+          highlighted
+            ? "border-orange bg-panel3 text-ink-bright"
+            : "border-transparent text-ink-dim hover:border-border hover:bg-panel3 hover:text-ink",
         )}
       >
-        <Icon name={icon} size={size} />
-      </span>
-      <span className="text-center text-[9px] leading-[10px] font-bold uppercase tracking-[0.02em]">
-        {line1}
-        <br />
-        {line2}
-      </span>
-    </button>
+        <span
+          className={cn(
+            "flex size-[22px] items-center justify-center rounded-[2px] border bg-panel2",
+            highlighted ? "border-orange text-orange" : "border-border",
+          )}
+        >
+          <Icon name={icon} size={size} />
+        </span>
+        <span className="text-center text-[9px] leading-[10px] font-bold uppercase tracking-[0.02em]">
+          {line1}
+          <br />
+          {line2}
+        </span>
+      </button>
+      {menu ? (
+        <span className="absolute top-[6px] right-[9px]">
+          <Menu label={`${line1} ${line2}`} variant="chevron" items={menu} />
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -374,18 +431,6 @@ function SmallButton({
     >
       <Icon name={icon} size={10} />
       {children}
-    </button>
-  );
-}
-
-function PeriodDrop({ period, onCycle }: { period: string; onCycle: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onCycle}
-      className="flex h-[22px] min-w-24 cursor-pointer items-center justify-between gap-1.5 rounded-[2px] border border-border bg-panel2 px-1.5 font-mono text-[10px] text-ink hover:border-border-l"
-    >
-      {period} ▾
     </button>
   );
 }

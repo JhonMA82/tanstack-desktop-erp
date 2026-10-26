@@ -36,6 +36,13 @@
       "source": "https://www.npmjs.com/package/react-dom",
       "type": "runtime"
     },
+    "zod": {
+      "version": "4.6.7",
+      "license": "MIT",
+      "purpose": "Wire contracts: validates API payloads and mock fixtures in src/data, and VITE_DATA_SOURCE",
+      "source": "https://www.npmjs.com/package/zod",
+      "type": "runtime"
+    },
     "@biomejs/biome": {
       "version": "2.5.14",
       "license": "MIT OR Apache-2.0",

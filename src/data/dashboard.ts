@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
-import { getJson, MOCK_LATENCY_MS, simulateLatency } from "@/lib/api";
+import { getJson, simulateLatency } from "@/lib/api";
 import { DATA_SOURCE } from "@/lib/env";
 import type { LedgerStatus } from "@/lib/ledger";
 
@@ -152,11 +152,11 @@ const DASHBOARD_DATA: DashboardData = {
   histogram: {
     bars: [
       { account: "6000", height: 40, color: "var(--blue)" },
-      { account: "6100", height: 22, color: "#3a3a3a" },
+      { account: "6100", height: 22, color: "var(--borderL)" },
       { account: "7000", height: 68, color: "var(--orange)" },
-      { account: "6200", height: 30, color: "#3a3a3a" },
-      { account: "6300", height: 18, color: "#3a3a3a" },
-      { account: "6400", height: 12, color: "#3a3a3a" },
+      { account: "6200", height: 30, color: "var(--borderL)" },
+      { account: "6300", height: 18, color: "var(--borderL)" },
+      { account: "6400", height: 12, color: "var(--borderL)" },
     ],
     breakdown: "PAYROLL 62% • SOFTWARE 18% • HOSTING 12%",
   },
@@ -265,7 +265,7 @@ export async function fetchDashboard(): Promise<DashboardData> {
     return getJson("/dashboard", dashboardSchema);
   }
 
-  await simulateLatency(MOCK_LATENCY_MS);
+  await simulateLatency();
   return dashboardSchema.parse(DASHBOARD_DATA);
 }
 

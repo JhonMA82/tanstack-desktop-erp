@@ -3,6 +3,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/components/feedback/toaster";
 import { useShell } from "@/components/layout/shell-context";
+import { APP } from "@/config/app";
 import { cn } from "@/lib/cn";
 import type { Command } from "./commands";
 import { createCommands } from "./commands";
@@ -134,7 +135,7 @@ export function CommandPalette() {
         </div>
         <div className="flex shrink-0 items-center justify-between border-t border-border bg-panel px-2.5 py-1 font-mono text-[9px] text-ink-dim">
           <span>↑↓ NAV • ENTER EXEC • ESC CLOSE • CTRL+K TOGGLE</span>
-          <span className="text-orange">ERP CORE v1 — BLENDER EDITION</span>
+          <span className="text-orange">{APP.tagline}</span>
         </div>
       </div>
     </div>

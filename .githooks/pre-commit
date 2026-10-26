@@ -1,0 +1,19 @@
+#!/bin/sh
+# Fast local gate: format and lint only the staged files (~100 ms). Typecheck,
+# tests and build run in CI (.github/workflows/ci.yml).
+# Enabled by `bun run hooks:install` (or automatically by `bun install`).
+
+set -e
+
+if ! command -v bun >/dev/null 2>&1; then
+  echo "pre-commit: bun not found, skipping biome" >&2
+  exit 0
+fi
+
+bunx biome check --write --staged --no-errors-on-unmatched
+
+# Biome may have rewritten staged files: keep the index in sync, otherwise the
+# commit carries the unformatted version.
+git diff --cached --name-only --diff-filter=ACMR | while IFS= read -r file; do
+  git add -- "$file"
+done

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
-import { getJson, MOCK_LATENCY_MS, simulateLatency } from "@/lib/api";
+import { getJson, simulateLatency } from "@/lib/api";
 import { DATA_SOURCE } from "@/lib/env";
 import {
   addDays,
@@ -147,7 +147,7 @@ export async function fetchInvoice(): Promise<InvoiceSeed> {
     return getJson("/invoice", invoiceSeedSchema);
   }
 
-  await simulateLatency(MOCK_LATENCY_MS);
+  await simulateLatency();
   return invoiceSeedSchema.parse({
     defaults: createDefaults(),
     clients: INVOICE_CLIENTS,

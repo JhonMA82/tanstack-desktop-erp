@@ -11,14 +11,14 @@ const BAR_STEP = 48;
 const BASELINE_Y = 120;
 const FIRST_X = 20;
 
-/** Dark bar chart of expenses per account with the allocation breakdown footer. */
+/** Bar chart of expenses per account with the allocation breakdown footer; colors are theme tokens. */
 export function ExpensesHistogram({ bars, breakdown }: ExpensesHistogramProps) {
   return (
     <section
-      className="flex flex-col rounded-[2px] border border-border bg-[#0a0a0a] p-2"
+      className="flex flex-col rounded-[2px] border border-border bg-bg p-2"
       aria-label="Expenses histogram"
     >
-      <header className="mb-2 font-mono text-[9px] text-[#666666]">
+      <header className="mb-2 font-mono text-[9px] text-ink-dim">
         EXPENSES HISTOGRAM • BY ACCOUNT
       </header>
       <svg
@@ -44,7 +44,7 @@ export function ExpensesHistogram({ bars, breakdown }: ExpensesHistogramProps) {
               y={132}
               textAnchor="middle"
               fontSize="8"
-              fill="#777777"
+              fill="var(--text-dim)"
               style={{ fontFamily: "var(--font-mono)" }}
             >
               {bar.account}
@@ -52,7 +52,7 @@ export function ExpensesHistogram({ bars, breakdown }: ExpensesHistogramProps) {
           </g>
         ))}
       </svg>
-      <footer className="mt-2 font-mono text-[8px] text-[#777777]">{breakdown}</footer>
+      <footer className="mt-2 font-mono text-[8px] text-ink-dim">{breakdown}</footer>
     </section>
   );
 }

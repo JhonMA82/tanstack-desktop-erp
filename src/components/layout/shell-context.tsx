@@ -12,6 +12,8 @@ export type RibbonView = "LEDGER" | "GRID" | "STATEMENTS";
 /** Reporting-period values cycled by the ribbon period dropdown. */
 export const PERIODS = ["7D", "30D", "90D", "FY"] as const;
 
+export type Period = (typeof PERIODS)[number];
+
 interface ShellContextValue {
   /** Current theme; persisted in `localStorage` under `erp-theme`. */
   theme: ThemeMode;
@@ -28,9 +30,9 @@ interface ShellContextValue {
   /** Collapses or expands the ribbon. */
   toggleRibbon: () => void;
   /** Reporting period shared by ribbon, viewport header, status bar and dashboard. */
-  period: string;
-  /** Advances the period (7D → 30D → 90D → FY → 7D). */
-  cyclePeriod: () => void;
+  period: Period;
+  /** Sets the reporting period from the ribbon period menu. */
+  setPeriod: (period: Period) => void;
   /** Ribbon view mode shared by ribbon, viewport header and status bar. */
   view: RibbonView;
   /** Updates the ribbon view mode. */
@@ -50,7 +52,7 @@ export function ShellProvider({ children }: { children: ReactNode }) {
   });
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [ribbonCollapsed, setRibbonCollapsed] = useState(false);
-  const [period, setPeriod] = useState<string>("30D");
+  const [period, setPeriod] = useState<Period>("30D");
   const [view, setView] = useState<RibbonView>("LEDGER");
   const activeModule = moduleByPath(pathname);
 
@@ -58,13 +60,6 @@ export function ShellProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle("light", theme === "light");
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
-
-  const cyclePeriod = useCallback(() => {
-    setPeriod((current) => {
-      const index = PERIODS.indexOf(current as (typeof PERIODS)[number]);
-      return PERIODS[(index + 1) % PERIODS.length];
-    });
-  }, []);
 
   const toggleRibbon = useCallback(() => setRibbonCollapsed((collapsed) => !collapsed), []);
 
@@ -78,11 +73,11 @@ export function ShellProvider({ children }: { children: ReactNode }) {
       ribbonCollapsed,
       toggleRibbon,
       period,
-      cyclePeriod,
+      setPeriod,
       view,
       setView,
     }),
-    [theme, paletteOpen, activeModule, ribbonCollapsed, toggleRibbon, period, cyclePeriod, view],
+    [theme, paletteOpen, activeModule, ribbonCollapsed, toggleRibbon, period, view],
   );
 
   return <ShellContext.Provider value={value}>{children}</ShellContext.Provider>;

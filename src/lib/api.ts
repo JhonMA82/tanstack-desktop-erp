@@ -5,7 +5,7 @@ import { API_BASE_URL } from "./env";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 /** Latency the mock adapter waits for, so loading states stay observable in dev. */
-export const MOCK_LATENCY_MS = 250;
+const MOCK_LATENCY_MS = 250;
 
 /** Data-layer failure: transport, HTTP status, or a payload that breaks the contract. */
 export class ApiError extends Error {
@@ -24,10 +24,10 @@ export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
 
-/** Resolves after `ms`: the mock adapter's stand-in for network latency. */
-export function simulateLatency(ms: number): Promise<void> {
+/** Resolves after the mock latency: the stand-in for a real network round-trip. */
+export function simulateLatency(): Promise<void> {
   return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+    setTimeout(resolve, MOCK_LATENCY_MS);
   });
 }
 

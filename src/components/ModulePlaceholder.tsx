@@ -10,8 +10,9 @@ export interface ModulePlaceholderProps {
 
 /**
  * Empty-state page for modules that are not migrated yet. It documents the
- * pattern to follow: data fetchers in `src/data`, components under
- * `src/components/<id>/`, composition in `src/routes/<id>.tsx`.
+ * pattern to follow: a resource (interface + zod schema + `queryOptions`) in
+ * `src/data`, components under `src/components/<id>/`, and a route that loads it
+ * with `ensureQueryData` and renders it with `useSuspenseQuery`.
  */
 export function ModulePlaceholder({ id }: ModulePlaceholderProps) {
   const definition = moduleById(id);
@@ -33,9 +34,11 @@ export function ModulePlaceholder({ id }: ModulePlaceholderProps) {
             {definition.description}
           </p>
           <p className="font-mono text-[10px] leading-relaxed text-ink-dim">
-            Migrate this module like Dashboard: add fetchers in src/data/{definition.id}.ts, build
-            components under src/components/{definition.id}/ and compose them in src/routes/
-            {definition.id}.tsx.
+            Migrate this module like Dashboard: add a resource in src/data/{definition.id}.ts
+            (interface + zod schema + queryOptions), build components under src/components/
+            {definition.id}/, and load it from src/routes/{definition.id}.tsx with a route loader
+            (ensureQueryData) that renders with useSuspenseQuery. Loading and error states come from
+            the router.
           </p>
           <Link
             to="/dashboard"

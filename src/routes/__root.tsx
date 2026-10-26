@@ -1,9 +1,18 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
+import { ShellError } from "@/components/feedback/RouteError";
 import { AppShell } from "@/components/layout/AppShell";
 import { Panel } from "@/components/ui/Panel";
 
-export const Route = createRootRoute({
+/** Router-wide context: every route `loader` receives it (see `src/main.tsx`). */
+export interface RouterContext {
+  queryClient: QueryClient;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
+  // Only reached when the shell fails: a module error is caught one level down.
+  errorComponent: ShellError,
   notFoundComponent: NotFoundComponent,
 });
 

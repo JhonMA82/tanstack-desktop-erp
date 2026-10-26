@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
-import { COMPANY, SYSTEM_PERFORMANCE } from "@/data/system";
+import { COMPANY } from "@/config/app";
+import { SYSTEM_PERFORMANCE } from "@/data/system";
 import { type PanelChromeProps, PanelCollapseBar, PanelRail } from "./PanelChrome";
 import { useShell } from "./shell-context";
 

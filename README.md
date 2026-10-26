@@ -13,6 +13,7 @@ El módulo **Dashboard** está migrado como ejemplo escalable del patrón comple
 | @tanstack/react-router | 1.170.38 | rutas file-based tipadas con code splitting |
 | @tanstack/react-query | 5.103.2 | estado de servidor: caché, loading y error |
 | @tanstack/react-table | 9.2.4 | tablas headless (features composables, v9) |
+| zod | 4.6.7 | contratos de datos: valida respuestas HTTP y fixtures |
 | tailwindcss + @tailwindcss/vite | 4.3.3 | utilidades CSS y tokens vía `@theme inline` |
 | typescript | 7.0.2 | chequeo de tipos (`tsc --noEmit`) |
 | @biomejs/biome | 2.5.14 | linter + formateador |
@@ -29,6 +30,7 @@ Todas las versiones están **fijadas en exacto** (sin `^`, `~` ni `latest`); el 
 | `bun run preview` | sirve el build de producción |
 | `bun run lint` | `biome ci .` (formato + lints, falla en CI) |
 | `bun run format` | `biome check --write .` (aplica fixes seguros) |
+| `bun run hooks:install` | activa el hook pre-commit de `.githooks` (también lo hace `bun install`) |
 | `bun run typecheck` | `tsc --noEmit` |
 | `bun test` | tests unitarios (bun test) |
 
@@ -40,7 +42,7 @@ src/
 │   ├── ui/             # primitivos sin lógica de negocio
 │   │                   #   Button · Badge · StatusBadge · Panel · Input · Metric · DataTable · Icon
 │   │                   #   Field · Select · Textarea · Checkbox · Switch · Slider · Modal · Tabs
-│   │                   #   ProgressBar · DropZone
+│   │                   #   ProgressBar · DropZone · Menu (trigger + panel portaled)
 │   ├── uikit/          # secciones del showcase /ui-kit (tokens, forms, modals, admin widgets…)
 │   │                   #   MetricCards · PerformanceOverview · SubscriberOverview (ref: shadcn-admin)
 │   ├── layout/         # TopBar (QAT+search), ModuleMenu (tabs+collapse), Ribbon (grupos por
@@ -51,16 +53,22 @@ src/
 │   ├── dashboard/      # widgets del módulo Dashboard (MetricsGrid, RevenueWaveform, …)
 │   ├── invoice/        # ejemplo /invoice: composer editable + paper imprimible (ref: shadcn-admin)
 │   └── ModulePlaceholder.tsx
-├── data/               # fixtures y fetchers mock (dashboard.ts, system.ts, admin-dashboard.ts,
-│   │                   #   invoice.ts — todos con queryOptions y latencia simulada)
-├── lib/                # utilidades puras: cn, format, modules (fuente única), ledger, icons,
-│   │                   #   invoice (fechas, líneas, descuento, impuesto y totales)
+├── config/app.ts       # marca (APP) y empresa (COMPANY): el shell no conoce el dominio
+├── data/               # recursos: fixtures + schema zod + queryOptions (dashboard, invoice,
+│   │                   #   admin-dashboard, system) — origen mock o HTTP según entorno
+├── lib/                # utilidades puras e infraestructura sin React: cn, format, modules
+│   │                   #   (fuente única), ledger, icons, invoice (fechas, líneas, descuento,
+│   │                   #   impuesto y totales), api (getJson + ApiError) y env (VITE_DATA_SOURCE)
 ├── routes/             # rutas file-based; routeTree.gen.ts lo genera el plugin de Vite
 ├── styles/index.css    # tokens @theme + tema oscuro (.root) y claro (.root.light)
-└── main.tsx            # QueryClient + Router (Register) + render
+└── main.tsx            # QueryClient en el router (context) + boundaries + render
 ```
 
-Regla de capas: `routes` compone → `components/<módulo>` presenta → `data` provee los datos vía `queryOptions` → `lib` contiene lógica pura compartida. Los primitivos de `ui/` nunca importan de `data/` ni conocen módulos concretos.
+Regla de capas: `routes` compone (y espera sus datos en el `loader`) → `components/<módulo>` presenta → `data` provee el contrato (`zod` + `queryOptions`) → `lib` contiene lógica pura e infraestructura sin React. Los primitivos de `ui/` nunca importan de `data/` ni conocen módulos concretos; el shell lee marca y empresa de `config/`.
+
+Los botones del ribbon aceptan `menu` (`MenuItem[]`): el cuerpo sigue ejecutando la acción y un chevron `▾` en la esquina del icono abre las variantes. `ui/Menu` las pinta en un portal porque el ribbon vive en un `overflow-x-auto` que recortaría un panel en flujo (detalle en `SPEC.md`).
+
+Fuera de `src/`: `.github/workflows/ci.yml` (typecheck · lint · test · build en cada push y PR), `.githooks/pre-commit` (biome solo sobre lo staged), `catalog/dependencies.json` (versión y licencia verificadas), `LICENSE` (MIT) y `SPEC.md` (decisiones de arquitectura).
 
 ## Design system
 
@@ -83,23 +91,49 @@ El tema se aplica con la clase `light` en `<html>` (persistida en `localStorage`
 2. **Crear la ruta** `src/routes/<id>.tsx` con `createFileRoute("/<id>")`; el plugin de TanStack Router regenera `routeTree.gen.ts` en el próximo `dev`/`build`. El redirect de `/` se resuelve en `src/routes/index.tsx`.
 3. **Placeholder mientras tanto**: `component: () => <ModulePlaceholder id="<id>" />`.
 4. **Al migrar**:
-   - fetchers + fixtures en `src/data/<id>.ts`, exportando `queryOptions` (`queryKey: ["<id>"]`);
+   - recurso en `src/data/<id>.ts`: interfaz + schema `zod` anotado `z.ZodType<T>` + `queryOptions` (`queryKey: ["<id>"]`) + fetcher que respeta `DATA_SOURCE` (mock validado o `getJson`);
    - widgets presentacionales en `src/components/<id>/` (sin efectos de red);
-   - componer en la ruta con `useQuery(...)`, renderizando los estados `isPending`/`isError` como hace `src/routes/dashboard.tsx`.
+   - la ruta carga con `loader: ({ context }) => context.queryClient.ensureQueryData(...)` y lee con `useSuspenseQuery`: no escribas estados de carga ni de error, los pinta el router.
 5. **Comandos extra** de la paleta (si hacen falta) en `src/components/palette/commands.ts`.
 
-## Datos: de mock a API real
+## Robustez
 
-`src/data/dashboard.ts` expone `dashboardQueryOptions` (TanStack Query) con un fetcher simulado (250 ms). Para conectar un backend real basta con reemplazar el cuerpo de `fetchDashboard()` por un `fetch`; la ruta, la caché (`staleTime` global en `main.tsx`) y los estados de carga/error no cambian.
+- `ModuleError` (`defaultErrorComponent` del router) reemplaza **solo** el contenido de la ruta: el shell sigue navegable y `RETRY` reintenta el loader (`reset()` + `router.invalidate()`).
+- `ShellError` es el `errorComponent` de `__root__`: si falla el propio shell no queda navegación, así que pinta chrome propio a pantalla completa con `RESTART`.
+- `QueryStatePanel` es el único cuerpo LOADING/ERROR del repo: no dupliques esos bloques por módulo.
+- `ModulePending` (`defaultPendingComponent`) cubre la navegación fría y lenta.
+
+## Datos: contrato único, dos orígenes
+
+La capa de datos tiene un contrato (`zod`) y dos orígenes conmutables por entorno:
+
+| `VITE_DATA_SOURCE` | Qué hace |
+|---|---|
+| `mock` (default) | Sirve los fixtures de `src/data` con 250 ms simulados |
+| `http` | `GET {VITE_API_BASE_URL}/<recurso>`, validado con el mismo schema |
+
+- `.env.example` documenta las variables; `.env` y `.env.*` están en `.gitignore`.
+- `src/lib/env.ts` valida `VITE_DATA_SOURCE` al arrancar: un valor inválido detiene la app con un mensaje explícito.
+- `src/lib/api.ts` centraliza `getJson` (`fetch` + timeout + validación). **Todo** fallo —transporte, status no-2xx o contrato roto— llega como una única `ApiError` con `status` (`0` = transporte, `502` = contrato).
+- Los schemas se anotan `z.ZodType<T>` contra las interfaces del recurso: si schema y tipo se desvían, falla el typecheck. El adaptador mock valida sus propios fixtures con el mismo schema, así que un fixture roto falla en `bun test`, no en la UI.
+- Las rutas esperan sus datos en el `loader` (`ensureQueryData`) y leen con `useSuspenseQuery`: el preload por intención calienta la caché y la página pinta completa, sin flash de LOADING.
 
 ## Convenciones
 
 - Prosa de documentación en **español**; código, comentarios, identificadores y mensajes de commit en **inglés** (Conventional Commits).
 - Versiones exactas en `package.json`; dependencias registradas en `catalog/dependencies.json`.
+- Contratos de datos: schema `zod` anotado `z.ZodType<T>` junto a la interfaz del recurso, en `src/data`.
+- Tests junto al código que prueban. En `src/routes` el plugin excluye `*.test.ts(x)` del route tree vía `routeFileIgnorePattern` (`vite.config.ts`): sin eso, cada test lanzaría un warning "does not export a Route".
 - Un archivo = una responsabilidad; los widgets del Dashboard (~60 líneas) son la referencia de escala.
 
 ## Limitaciones conocidas
 
 - ACCOUNTING, HRM, PAYROLL, INVENTORY, REPORTS y SETTINGS son placeholders (alcance migrado: Dashboard + Invoice).
-- Los datos son fixtures locales; no hay backend, auth ni Tauri.
+- No hay backend, auth ni Tauri: el origen `http` está cubierto por tests con `fetch` stubbeado, no contra un servidor real.
+- Las tipografías se cargan de Google Fonts en `index.html`: para uso offline o de escritorio hay que self-hostearlas.
+- `zod` entra en el chunk de entrada vía `env.ts` (+27 kB gzip): candidato a `manualChunks` si el arranque importa.
 - El FPS/clock del status header son decorativos (lectura fija de `data/system.ts` para los medidores del inspector).
+
+## Licencia
+
+MIT — ver `LICENSE`.
