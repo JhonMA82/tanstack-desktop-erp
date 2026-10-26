@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import type { ModuleDef } from "@/config/navigation";
-import { MODULES, pagesOf } from "@/config/navigation";
+import { MODULES, visiblePagesOf } from "@/config/navigation";
 import { cn } from "@/lib/cn";
 import { type PanelChromeProps, PanelCollapseBar, PanelRail } from "./PanelChrome";
 import { useShell } from "./shell-context";
@@ -86,7 +86,7 @@ interface ModuleNodeProps {
 
 /** One module row plus its nested pages when expanded. */
 function ModuleNode({ module, pathname, open, onToggle }: ModuleNodeProps) {
-  const pages = pagesOf(module.id);
+  const pages = visiblePagesOf(module.id);
   const hasPages = pages.length > 0;
   const isModuleActive = pathname === module.path || pathname === `${module.path}/`;
 

@@ -23,6 +23,9 @@ function routePaths(): string[] {
 /** `/` only redirects to the default module, so it is the sole unregistered route. */
 const NON_MODULE_ROUTES = new Set(["/"]);
 
+/** Detail/edit routes take a route param, so they are not registry destinations. */
+const isDynamic = (path: string) => path.includes("$");
+
 function registeredPaths(): string[] {
   return [...MODULES.map((module) => module.path), ...PAGES.map((page) => page.path)];
 }
@@ -67,12 +70,20 @@ describe("navigation registry", () => {
     expect(unknown).toEqual([]);
   });
 
-  test("has a registry entry for every route in the tree", () => {
+  test("has a registry entry for every static route in the tree", () => {
     const registered = new Set(registeredPaths());
     const orphans = routePaths().filter(
-      (path) => !NON_MODULE_ROUTES.has(path) && !registered.has(path),
+      (path) => !NON_MODULE_ROUTES.has(path) && !isDynamic(path) && !registered.has(path),
     );
     expect(orphans).toEqual([]);
+  });
+
+  test("nests every dynamic route under a registered module", () => {
+    const modulePaths = MODULES.map((module) => module.path);
+    const escaped = routePaths()
+      .filter(isDynamic)
+      .filter((path) => !modulePaths.some((modulePath) => path.startsWith(`${modulePath}/`)));
+    expect(escaped).toEqual([]);
   });
 
   test("nests every page under its module", () => {

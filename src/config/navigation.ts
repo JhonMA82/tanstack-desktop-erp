@@ -63,6 +63,12 @@ export interface PageDef {
   moduleId: string;
   label: string;
   path: ModulePath;
+  /**
+   * Registered but not a navigation destination: forms, wizards and other routes
+   * reached from a row or a button. Keeps the guardrail honest without putting
+   * "New entry" in the outliner.
+   */
+  hidden?: boolean;
 }
 
 /** A top-level module: one tab, one ribbon and, optionally, nested pages. */
@@ -178,6 +184,35 @@ export const MODULES: ModuleDef[] = [
       },
     ],
   },
+  {
+    id: "entries",
+    label: "ENTRIES",
+    path: "/entries",
+    count: "—",
+    description: "Ledger entries: list, create, edit and archive, with a detail page per entry.",
+    ribbon: [
+      {
+        label: "Entry",
+        actions: [
+          {
+            id: "new-entry",
+            size: "large",
+            icon: "plus",
+            label: "New\nEntry",
+            tone: "accent",
+            to: "/entries/new",
+          },
+          {
+            id: "export",
+            size: "large",
+            icon: "export",
+            label: "Export",
+            notify: { kind: "SUCCESS", title: "EXPORTED", message: "entries.csv — 6 rows" },
+          },
+        ],
+      },
+    ],
+  },
   // gen:modules
 ];
 
@@ -191,6 +226,13 @@ export const PAGES: PageDef[] = [
     moduleId: "settings",
     label: "PREFERENCES",
     path: "/settings/preferences",
+  },
+  {
+    id: "new",
+    moduleId: "entries",
+    label: "NEW ENTRY",
+    path: "/entries/new",
+    hidden: true,
   },
   // gen:pages
 ];
@@ -209,9 +251,14 @@ export function moduleByPath(pathname: string): ModuleDef {
   return found ?? MODULES[0];
 }
 
-/** Nested pages owned by `moduleId`, in registry order. */
+/** Nested pages owned by `moduleId`, in registry order (hidden ones included). */
 export function pagesOf(moduleId: string): PageDef[] {
   return PAGES.filter((page) => page.moduleId === moduleId);
+}
+
+/** Pages a navigation surface should show: outliner tree, ribbon `Pages`, palette. */
+export function visiblePagesOf(moduleId: string): PageDef[] {
+  return pagesOf(moduleId).filter((page) => !page.hidden);
 }
 
 /** Resolves the nested page at `pathname`, when the pathnames matches one. */

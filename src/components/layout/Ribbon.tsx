@@ -5,7 +5,7 @@ import { useToast } from "@/components/feedback/toaster";
 import { Icon } from "@/components/ui/Icon";
 import { Menu, type MenuItem } from "@/components/ui/Menu";
 import type { ActionBehavior, MenuAction, RibbonAction, RibbonGroup } from "@/config/navigation";
-import { pagesOf } from "@/config/navigation";
+import { visiblePagesOf } from "@/config/navigation";
 import { cn } from "@/lib/cn";
 import type { IconName } from "@/lib/icons";
 import { useShell } from "./shell-context";
@@ -82,7 +82,7 @@ export function Ribbon() {
  * empty column (that was the empty slot next to `PAGES`).
  */
 function ribbonGroups(moduleId: string, groups: RibbonGroup[]): RibbonGroup[] {
-  const pages = pagesOf(moduleId);
+  const pages = visiblePagesOf(moduleId);
   const all = [...groups];
 
   if (pages.length > 0) {

@@ -24,3 +24,11 @@ export function formatPercent(ratio: number): string {
   const sign = ratio >= 0 ? "+" : "";
   return `${sign}${(ratio * 100).toFixed(1)}%`;
 }
+
+/**
+ * Formats integer cents as currency (`125050` becomes `$1,250.50`). Money lives in
+ * cents across the data layer, so this is the only place that divides.
+ */
+export function formatCents(cents: number, currency = "USD"): string {
+  return formatCurrency(cents / 100, currency);
+}

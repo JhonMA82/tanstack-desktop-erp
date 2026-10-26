@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { MODULES, pagesOf } from "@/config/navigation";
+import { MODULES, visiblePagesOf } from "@/config/navigation";
 import { cn } from "@/lib/cn";
 import { useShell } from "./shell-context";
 
@@ -11,7 +11,8 @@ import { useShell } from "./shell-context";
  */
 export function ModuleMenu() {
   const { activeModule, ribbonCollapsed, toggleRibbon } = useShell();
-  const hasRibbon = Boolean(activeModule.ribbon?.length) || pagesOf(activeModule.id).length > 0;
+  const hasRibbon =
+    Boolean(activeModule.ribbon?.length) || visiblePagesOf(activeModule.id).length > 0;
 
   return (
     <nav

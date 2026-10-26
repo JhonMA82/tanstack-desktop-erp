@@ -15,6 +15,13 @@
       "source": "https://www.npmjs.com/package/@tanstack/react-router",
       "type": "runtime"
     },
+    "@tanstack/react-form": {
+      "version": "1.33.5",
+      "license": "MIT",
+      "purpose": "Form state and validation (validate with the existing zod schemas via Standard Schema)",
+      "source": "https://www.npmjs.com/package/@tanstack/react-form",
+      "type": "runtime"
+    },
     "@tanstack/react-table": {
       "version": "9.2.4",
       "license": "MIT",

@@ -10,15 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EntriesRouteImport } from './routes/entries'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as EntriesIndexRouteImport } from './routes/entries.index'
+import { Route as EntriesEntryIdRouteImport } from './routes/entries.$entryId'
+import { Route as EntriesNewRouteImport } from './routes/entries.new'
 import { Route as HomeIndexRouteImport } from './routes/home.index'
 import { Route as SettingsIndexRouteImport } from './routes/settings.index'
 import { Route as SettingsPreferencesRouteImport } from './routes/settings.preferences'
+import { Route as EntriesEntryIdIndexRouteImport } from './routes/entries.$entryId.index'
+import { Route as EntriesEntryIdEditRouteImport } from './routes/entries.$entryId.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntriesRoute = EntriesRouteImport.update({
+  id: '/entries',
+  path: '/entries',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -30,6 +41,21 @@ const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => rootRouteImport,
+} as any)
+const EntriesIndexRoute = EntriesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EntriesRoute,
+} as any)
+const EntriesEntryIdRoute = EntriesEntryIdRouteImport.update({
+  id: '/$entryId',
+  path: '/$entryId',
+  getParentRoute: () => EntriesRoute,
+} as any)
+const EntriesNewRoute = EntriesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => EntriesRoute,
 } as any)
 const HomeIndexRoute = HomeIndexRouteImport.update({
   id: '/',
@@ -46,53 +72,100 @@ const SettingsPreferencesRoute = SettingsPreferencesRouteImport.update({
   path: '/preferences',
   getParentRoute: () => SettingsRoute,
 } as any)
+const EntriesEntryIdIndexRoute = EntriesEntryIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EntriesEntryIdRoute,
+} as any)
+const EntriesEntryIdEditRoute = EntriesEntryIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => EntriesEntryIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/entries': typeof EntriesRouteWithChildren
   '/home': typeof HomeRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/entries/$entryId': typeof EntriesEntryIdRouteWithChildren
+  '/entries/new': typeof EntriesNewRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
+  '/entries/': typeof EntriesIndexRoute
   '/home/': typeof HomeIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/entries/$entryId/edit': typeof EntriesEntryIdEditRoute
+  '/entries/$entryId/': typeof EntriesEntryIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/entries/new': typeof EntriesNewRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
+  '/entries': typeof EntriesIndexRoute
   '/home': typeof HomeIndexRoute
   '/settings': typeof SettingsIndexRoute
+  '/entries/$entryId/edit': typeof EntriesEntryIdEditRoute
+  '/entries/$entryId': typeof EntriesEntryIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/entries': typeof EntriesRouteWithChildren
   '/home': typeof HomeRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/entries/$entryId': typeof EntriesEntryIdRouteWithChildren
+  '/entries/new': typeof EntriesNewRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
+  '/entries/': typeof EntriesIndexRoute
   '/home/': typeof HomeIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/entries/$entryId/edit': typeof EntriesEntryIdEditRoute
+  '/entries/$entryId/': typeof EntriesEntryIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/entries'
     | '/home'
     | '/settings'
+    | '/entries/$entryId'
+    | '/entries/new'
     | '/settings/preferences'
+    | '/entries/'
     | '/home/'
     | '/settings/'
+    | '/entries/$entryId/edit'
+    | '/entries/$entryId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/settings/preferences' | '/home' | '/settings'
+  to:
+    | '/'
+    | '/entries/new'
+    | '/settings/preferences'
+    | '/entries'
+    | '/home'
+    | '/settings'
+    | '/entries/$entryId/edit'
+    | '/entries/$entryId'
   id:
     | '__root__'
     | '/'
+    | '/entries'
     | '/home'
     | '/settings'
+    | '/entries/$entryId'
+    | '/entries/new'
     | '/settings/preferences'
+    | '/entries/'
     | '/home/'
     | '/settings/'
+    | '/entries/$entryId/edit'
+    | '/entries/$entryId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EntriesRoute: typeof EntriesRouteWithChildren
   HomeRoute: typeof HomeRouteWithChildren
   SettingsRoute: typeof SettingsRouteWithChildren
 }
@@ -104,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entries': {
+      id: '/entries'
+      path: '/entries'
+      fullPath: '/entries'
+      preLoaderRoute: typeof EntriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -119,6 +199,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/entries/': {
+      id: '/entries/'
+      path: '/'
+      fullPath: '/entries/'
+      preLoaderRoute: typeof EntriesIndexRouteImport
+      parentRoute: typeof EntriesRoute
+    }
+    '/entries/$entryId': {
+      id: '/entries/$entryId'
+      path: '/$entryId'
+      fullPath: '/entries/$entryId'
+      preLoaderRoute: typeof EntriesEntryIdRouteImport
+      parentRoute: typeof EntriesRoute
+    }
+    '/entries/new': {
+      id: '/entries/new'
+      path: '/new'
+      fullPath: '/entries/new'
+      preLoaderRoute: typeof EntriesNewRouteImport
+      parentRoute: typeof EntriesRoute
     }
     '/home/': {
       id: '/home/'
@@ -141,8 +242,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsPreferencesRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/entries/$entryId/': {
+      id: '/entries/$entryId/'
+      path: '/'
+      fullPath: '/entries/$entryId/'
+      preLoaderRoute: typeof EntriesEntryIdIndexRouteImport
+      parentRoute: typeof EntriesEntryIdRoute
+    }
+    '/entries/$entryId/edit': {
+      id: '/entries/$entryId/edit'
+      path: '/edit'
+      fullPath: '/entries/$entryId/edit'
+      preLoaderRoute: typeof EntriesEntryIdEditRouteImport
+      parentRoute: typeof EntriesEntryIdRoute
+    }
   }
 }
+
+interface EntriesEntryIdRouteChildren {
+  EntriesEntryIdEditRoute: typeof EntriesEntryIdEditRoute
+  EntriesEntryIdIndexRoute: typeof EntriesEntryIdIndexRoute
+}
+
+const EntriesEntryIdRouteChildren: EntriesEntryIdRouteChildren = {
+  EntriesEntryIdEditRoute: EntriesEntryIdEditRoute,
+  EntriesEntryIdIndexRoute: EntriesEntryIdIndexRoute,
+}
+
+const EntriesEntryIdRouteWithChildren = EntriesEntryIdRoute._addFileChildren(
+  EntriesEntryIdRouteChildren,
+)
+
+interface EntriesRouteChildren {
+  EntriesEntryIdRoute: typeof EntriesEntryIdRouteWithChildren
+  EntriesNewRoute: typeof EntriesNewRoute
+  EntriesIndexRoute: typeof EntriesIndexRoute
+}
+
+const EntriesRouteChildren: EntriesRouteChildren = {
+  EntriesEntryIdRoute: EntriesEntryIdRouteWithChildren,
+  EntriesNewRoute: EntriesNewRoute,
+  EntriesIndexRoute: EntriesIndexRoute,
+}
+
+const EntriesRouteWithChildren =
+  EntriesRoute._addFileChildren(EntriesRouteChildren)
 
 interface HomeRouteChildren {
   HomeIndexRoute: typeof HomeIndexRoute
@@ -170,6 +314,7 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EntriesRoute: EntriesRouteWithChildren,
   HomeRoute: HomeRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
 }

@@ -31,14 +31,41 @@ export function simulateLatency(): Promise<void> {
   });
 }
 
+/** Methods the data layer can write with. */
+export type WriteMethod = "POST" | "PATCH" | "DELETE";
+
 /**
  * GETs `path` from the API, validates the payload with `schema` and returns it.
  * Every failure mode throws `ApiError`, so callers handle a single error type.
  */
 export async function getJson<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
-  const response = await request(url);
+  return readJson(await request(url), url, schema);
+}
 
+/**
+ * Writes `body` (JSON) to `path`, validates the response with `schema` and returns
+ * it. Same single `ApiError` as `getJson`: transport, status or contract failures
+ * reach the caller as one type.
+ */
+export async function sendJson<T>(
+  method: WriteMethod,
+  path: string,
+  body: unknown,
+  schema: z.ZodType<T>,
+): Promise<T> {
+  const url = `${API_BASE_URL}${path}`;
+  const response = await request(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  return readJson(response, url, schema);
+}
+
+/** Validates a response payload against the resource contract. */
+async function readJson<T>(response: Response, url: string, schema: z.ZodType<T>): Promise<T> {
   let payload: unknown;
   try {
     payload = await response.json();
@@ -59,11 +86,12 @@ export async function getJson<T>(path: string, schema: z.ZodType<T>): Promise<T>
 }
 
 /** Performs the request and normalizes transport and status failures into `ApiError`. */
-async function request(url: string): Promise<Response> {
+async function request(url: string, init: RequestInit = {}): Promise<Response> {
   let response: Response;
   try {
     response = await fetch(url, {
-      headers: { Accept: "application/json" },
+      ...init,
+      headers: { Accept: "application/json", ...init.headers },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch (cause) {

@@ -1,6 +1,6 @@
 import type { ToastInput } from "@/components/feedback/toaster";
 import type { ModulePath } from "@/config/navigation";
-import { MODULES, pagesOf } from "@/config/navigation";
+import { MODULES, visiblePagesOf } from "@/config/navigation";
 
 export type CommandGroup = "NAVIGATION" | "ACTIONS";
 
@@ -45,7 +45,7 @@ export function createCommands(): Command[] {
       },
     };
 
-    const pages: Command[] = pagesOf(module.id).map((page) => ({
+    const pages: Command[] = visiblePagesOf(module.id).map((page) => ({
       id: `go-${module.id}-${page.id}`,
       group: "NAVIGATION",
       label: `GO TO ${module.label} / ${page.label}`,
