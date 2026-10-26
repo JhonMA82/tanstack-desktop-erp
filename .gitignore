@@ -2,3 +2,11 @@ node_modules/
 dist/
 *.local
 .DS_Store
+
+# Local env overrides; `.env.example` documents the supported variables.
+.env
+.env.*
+!.env.example
+
+# TanStack Router generator scratch space
+.tanstack/

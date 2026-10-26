@@ -1,16 +1,3 @@
-/** Static company identity shown in the properties inspector. */
-export interface CompanyInfo {
-  name: string;
-  fiscalYear: string;
-  currency: string;
-}
-
-export const COMPANY: CompanyInfo = {
-  name: "ACME CORP",
-  fiscalYear: "2024-2025",
-  currency: "USD",
-};
-
 /** Mock system performance snapshot for the inspector meters. */
 export interface SystemPerformance {
   cpuPercent: number;

@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useToast } from "@/components/feedback/toaster";
 import { Icon } from "@/components/ui/Icon";
+import { APP, COMPANY } from "@/config/app";
 import { useShell } from "./shell-context";
 
 /**
@@ -18,10 +19,10 @@ export function TopBar() {
       <div className="flex min-w-0 items-center gap-2.5">
         <span className="size-2 shrink-0 rounded-[2px] bg-orange" aria-hidden="true" />
         <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.06em] text-ink-bright">
-          ● ERP CORE v1.0
+          {APP.mark} {APP.name} v{APP.version}
         </span>
         <span className="file-path min-w-0 truncate font-mono text-[10px] text-ink-dim">
-          — /company/acme_corp — LEDGER: ACME_CORP.blend — {activeModule.label}
+          — {APP.filePath} — {activeModule.label}
         </span>
         <div
           className="flex shrink-0 gap-px rounded-[2px] border border-border bg-panel2 p-px"
@@ -31,7 +32,11 @@ export function TopBar() {
             type="button"
             aria-label="Save"
             onClick={() =>
-              push({ kind: "SUCCESS", title: "SAVED", message: "Ledger saved — ACME_CORP.blend" })
+              push({
+                kind: "SUCCESS",
+                title: "SAVED",
+                message: `Saved — ${COMPANY.name}`,
+              })
             }
             className="flex size-5 items-center justify-center rounded-[2px] border border-transparent text-ink-dim hover:border-border hover:bg-panel3 hover:text-ink"
           >
@@ -80,14 +85,14 @@ export function TopBar() {
       <div className="ml-auto flex shrink-0 items-center gap-2 font-mono text-[10px] text-ink-dim">
         <span className="flex h-4 items-center gap-1.5 rounded-[2px] border border-border bg-panel2 px-1.5 text-[9px] font-bold tracking-[0.08em]">
           <i
-            className="inline-block size-1.5 rounded-[1px] bg-green animate-[erp-pulse_1.2s_infinite]"
+            className="inline-block size-1.5 rounded-[1px] bg-green animate-[app-pulse_1.2s_infinite]"
             aria-hidden="true"
           />
-          LIVE ●
+          LIVE
         </span>
         <span className="hidden items-center gap-1 sm:flex">
           <span className="inline-block h-1.5 w-1.5 rounded-[1px] bg-orange" aria-hidden="true" />
-          COMPANY: ACME
+          COMPANY: {APP.organization}
         </span>
         <button
           type="button"
@@ -96,7 +101,8 @@ export function TopBar() {
           onClick={toggleTheme}
           className="flex size-5 items-center justify-center rounded-[2px] border border-border bg-panel2 text-[10px] font-bold text-ink-dim hover:border-orange hover:text-orange"
         >
-          {theme === "dark" ? "◑" : "◐"}
+          {/* Shows the theme you would switch to. */}
+          <Icon name={theme === "dark" ? "sun" : "moon"} size={11} />
         </button>
         <button
           type="button"
@@ -104,7 +110,7 @@ export function TopBar() {
           onClick={() => void navigate({ to: "/settings" })}
           className="flex size-5 items-center justify-center rounded-[2px] border border-border bg-panel3 font-mono text-[9px] font-bold text-ink-bright"
         >
-          AC
+          {APP.initials}
         </button>
       </div>
     </header>

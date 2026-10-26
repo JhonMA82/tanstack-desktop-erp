@@ -1,10 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ModulePlaceholder } from "@/components/ModulePlaceholder";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
+/**
+ * Settings is the base's nesting example: a layout that only renders its
+ * `<Outlet/>`, an `index` page for `/settings` and a real child at
+ * `/settings/preferences`. That is the shape `bun run gen page` produces.
+ */
 export const Route = createFileRoute("/settings")({
-  component: SettingsPage,
+  component: SettingsLayout,
 });
 
-function SettingsPage() {
-  return <ModulePlaceholder id="settings" />;
+function SettingsLayout() {
+  return <Outlet />;
 }

@@ -1,24 +1,32 @@
-import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
+import { Icon } from "@/components/ui/Icon";
+import type { ModuleDef } from "@/config/navigation";
+import { MODULES, visiblePagesOf } from "@/config/navigation";
 import { cn } from "@/lib/cn";
-import { FAVORITES, MODULES } from "@/lib/modules";
 import { type PanelChromeProps, PanelCollapseBar, PanelRail } from "./PanelChrome";
 import { useShell } from "./shell-context";
 
 const ITEM_CLASSES =
-  "flex h-[22px] w-full items-center gap-1.5 border-l-2 border-l-transparent px-2 text-left text-[11px] text-ink-dim transition-colors hover:bg-panel2 hover:text-ink";
+  "flex h-[22px] min-w-0 flex-1 items-center gap-1.5 border-l-2 border-l-transparent px-2 text-left text-[11px] text-ink-dim transition-colors hover:bg-panel2 hover:text-ink";
+
+const ACTIVE_CLASSES = "border-l-orange bg-panel3 text-ink-bright";
 
 interface OutlinerProps extends PanelChromeProps {
   /** Collapses the whole panel to a vertical rail. */
   collapsed: boolean;
 }
 
-/** Left outliner: collapsible favorites and module sections (Blender outliner style). */
+/**
+ * Left outliner: the module tree. A module with `pages` in the navigation
+ * registry expands into its nested routes (the app's submenus), so a new page
+ * shows up here without touching this component.
+ */
 export function Outliner({ collapsed, title, side, onToggle }: OutlinerProps) {
   const { activeModule } = useShell();
-  const [open, setOpen] = useState({ favorites: true, modules: true });
-  const activePath = activeModule.path;
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [modulesOpen, setModulesOpen] = useState(true);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   if (collapsed) {
     return (
@@ -37,68 +45,88 @@ export function Outliner({ collapsed, title, side, onToggle }: OutlinerProps) {
       aria-label="Outliner"
     >
       <PanelCollapseBar title={title} side={side} onToggle={onToggle} />
-      <OutlinerSection
-        title="Favorites"
-        open={open.favorites}
-        onToggle={() => setOpen((s) => ({ ...s, favorites: !s.favorites }))}
-      >
-        {FAVORITES.map((favorite) => (
-          <Link
-            key={favorite.label}
-            to={favorite.path}
-            className={cn(
-              ITEM_CLASSES,
-              activePath === favorite.path && "border-l-orange bg-panel3 text-ink-bright",
-            )}
-          >
-            <span className="truncate">{favorite.label}</span>
-          </Link>
-        ))}
-      </OutlinerSection>
-      <OutlinerSection
-        title="Modules"
-        open={open.modules}
-        onToggle={() => setOpen((s) => ({ ...s, modules: !s.modules }))}
-      >
-        {MODULES.map((module) => (
-          <Link
-            key={module.id}
-            to={module.path}
-            className={cn(
-              ITEM_CLASSES,
-              activePath === module.path && "border-l-orange bg-panel3 text-ink-bright",
-            )}
-          >
-            <span className="truncate">{module.label}</span>
-            <span className="ml-auto shrink-0 font-mono text-[8px] text-ink-dim">
-              {module.count}
-            </span>
-          </Link>
-        ))}
-      </OutlinerSection>
+      <div className="flex min-h-0 flex-col">
+        <button
+          type="button"
+          onClick={() => setModulesOpen((open) => !open)}
+          aria-expanded={modulesOpen}
+          className="flex h-5 shrink-0 items-center gap-1 border-b border-border bg-panel2 px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-ink-dim hover:text-ink-bright"
+        >
+          <Icon name={modulesOpen ? "chevron-down" : "chevron-right"} size={9} /> Modules
+        </button>
+        {modulesOpen ? (
+          <div className="py-0.5">
+            {MODULES.map((module) => (
+              <ModuleNode
+                key={module.id}
+                module={module}
+                pathname={pathname}
+                open={expanded[module.id] ?? module.id === activeModule.id}
+                onToggle={() =>
+                  setExpanded((state) => ({
+                    ...state,
+                    [module.id]: !(state[module.id] ?? module.id === activeModule.id),
+                  }))
+                }
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
     </aside>
   );
 }
 
-interface OutlinerSectionProps {
-  title: string;
+interface ModuleNodeProps {
+  module: ModuleDef;
+  pathname: string;
   open: boolean;
   onToggle: () => void;
-  children: ReactNode;
 }
 
-function OutlinerSection({ title, open, onToggle, children }: OutlinerSectionProps) {
+/** One module row plus its nested pages when expanded. */
+function ModuleNode({ module, pathname, open, onToggle }: ModuleNodeProps) {
+  const pages = visiblePagesOf(module.id);
+  const hasPages = pages.length > 0;
+  const isModuleActive = pathname === module.path || pathname === `${module.path}/`;
+
   return (
-    <div className="flex min-h-0 flex-col">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="flex h-5 shrink-0 items-center gap-1 border-b border-border bg-panel2 px-2 text-[10px] font-bold tracking-[0.08em] text-ink-dim uppercase hover:text-ink-bright"
-      >
-        {open ? "▾" : "▸"} {title}
-      </button>
-      {open ? <div className="py-0.5">{children}</div> : null}
+    <div className="flex flex-col">
+      <div className="flex items-stretch">
+        {hasPages ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={open}
+            aria-label={`${module.label} pages`}
+            className="flex w-[18px] shrink-0 cursor-pointer items-center justify-center font-mono text-[9px] text-ink-dim hover:text-ink-bright"
+          >
+            <Icon name={open ? "chevron-down" : "chevron-right"} size={9} />
+          </button>
+        ) : (
+          <span className="w-[18px] shrink-0" aria-hidden="true" />
+        )}
+        <Link
+          to={module.path}
+          activeOptions={{ exact: true }}
+          className={cn(ITEM_CLASSES, isModuleActive && ACTIVE_CLASSES)}
+        >
+          <span className="truncate">{module.label}</span>
+          <span className="ml-auto shrink-0 font-mono text-[8px] text-ink-dim">{module.count}</span>
+        </Link>
+      </div>
+      {hasPages && open
+        ? pages.map((page) => (
+            <Link
+              key={page.id}
+              to={page.path}
+              activeOptions={{ exact: true }}
+              className={cn(ITEM_CLASSES, "pl-6", pathname === page.path && ACTIVE_CLASSES)}
+            >
+              <span className="truncate">{page.label}</span>
+            </Link>
+          ))
+        : null}
     </div>
   );
 }

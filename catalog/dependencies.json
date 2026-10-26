@@ -15,11 +15,25 @@
       "source": "https://www.npmjs.com/package/@tanstack/react-router",
       "type": "runtime"
     },
+    "@tanstack/react-form": {
+      "version": "1.33.5",
+      "license": "MIT",
+      "purpose": "Form state and validation (validate with the existing zod schemas via Standard Schema)",
+      "source": "https://www.npmjs.com/package/@tanstack/react-form",
+      "type": "runtime"
+    },
     "@tanstack/react-table": {
       "version": "9.2.4",
       "license": "MIT",
-      "purpose": "Headless data tables (Recent Transactions with quick filter model)",
+      "purpose": "Headless data tables (DataTable with quick filter, sizing and pagination models)",
       "source": "https://www.npmjs.com/package/@tanstack/react-table",
+      "type": "runtime"
+    },
+    "lucide-react": {
+      "version": "1.61.0",
+      "license": "ISC",
+      "purpose": "Icon set behind the curated map in src/lib/icons.ts (24x24 stroke grid)",
+      "source": "https://www.npmjs.com/package/lucide-react",
       "type": "runtime"
     },
     "react": {
@@ -36,6 +50,13 @@
       "source": "https://www.npmjs.com/package/react-dom",
       "type": "runtime"
     },
+    "zod": {
+      "version": "4.6.7",
+      "license": "MIT",
+      "purpose": "Wire contracts: validates API payloads and mock fixtures in src/data, and VITE_DATA_SOURCE",
+      "source": "https://www.npmjs.com/package/zod",
+      "type": "runtime"
+    },
     "@biomejs/biome": {
       "version": "2.5.14",
       "license": "MIT OR Apache-2.0",
@@ -48,6 +69,13 @@
       "license": "MIT",
       "purpose": "Tailwind CSS v4 compiler plugin for Vite",
       "source": "https://www.npmjs.com/package/@tailwindcss/vite",
+      "type": "dev"
+    },
+    "@tanstack/router-generator": {
+      "version": "1.167.38",
+      "license": "MIT",
+      "purpose": "Regenerates routeTree.gen.ts from scripts/routes.ts when routes are scaffolded outside Vite (same options as the plugin)",
+      "source": "https://www.npmjs.com/package/@tanstack/router-generator",
       "type": "dev"
     },
     "@tanstack/router-plugin": {

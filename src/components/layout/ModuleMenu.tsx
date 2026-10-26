@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Fragment } from "react";
+import { Icon } from "@/components/ui/Icon";
+import { MODULES, visiblePagesOf } from "@/config/navigation";
 import { cn } from "@/lib/cn";
-import { MODULES } from "@/lib/modules";
 import { useShell } from "./shell-context";
 
 /**
@@ -10,6 +11,8 @@ import { useShell } from "./shell-context";
  */
 export function ModuleMenu() {
   const { activeModule, ribbonCollapsed, toggleRibbon } = useShell();
+  const hasRibbon =
+    Boolean(activeModule.ribbon?.length) || visiblePagesOf(activeModule.id).length > 0;
 
   return (
     <nav
@@ -22,6 +25,7 @@ export function ModuleMenu() {
           <Fragment key={module.id}>
             <Link
               to={module.path}
+              activeOptions={{ exact: true }}
               className={cn(
                 "flex h-8 shrink-0 cursor-pointer items-center gap-1.5 border-b-2 border-b-transparent px-3.5 text-[11px] font-semibold tracking-[0.05em] uppercase transition-colors",
                 isActive
@@ -38,13 +42,16 @@ export function ModuleMenu() {
           </Fragment>
         );
       })}
-      <button
-        type="button"
-        onClick={toggleRibbon}
-        className="ml-auto flex h-[22px] shrink-0 cursor-pointer items-center gap-1 self-center rounded-[2px] border border-border bg-panel2 px-2 text-[9px] tracking-[0.06em] uppercase text-ink-dim hover:text-ink-bright"
-      >
-        {ribbonCollapsed ? "▼ EXPAND RIBBON" : "▲ COLLAPSE RIBBON"}
-      </button>
+      {hasRibbon ? (
+        <button
+          type="button"
+          onClick={toggleRibbon}
+          className="ml-auto flex h-[22px] shrink-0 cursor-pointer items-center gap-1 self-center rounded-[2px] border border-border bg-panel2 px-2 text-[9px] tracking-[0.06em] uppercase text-ink-dim hover:text-ink-bright"
+        >
+          <Icon name={ribbonCollapsed ? "chevron-down" : "chevron-up"} size={8} />
+          {ribbonCollapsed ? "EXPAND RIBBON" : "COLLAPSE RIBBON"}
+        </button>
+      ) : null}
     </nav>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatCurrency, formatPercent } from "./format";
+import { formatCents, formatCurrency, formatPercent } from "./format";
 
 describe("formatCurrency", () => {
   test("formats whole USD amounts with two decimals", () => {
@@ -20,5 +20,13 @@ describe("formatPercent", () => {
 
   test("formats negative ratios", () => {
     expect(formatPercent(-0.031)).toBe("-3.1%");
+  });
+});
+
+describe("formatCents", () => {
+  test("divides cents once, at the display edge", () => {
+    expect(formatCents(125050)).toBe("$1,250.50");
+    expect(formatCents(4250)).toBe("$42.50");
+    expect(formatCents(0)).toBe("$0.00");
   });
 });

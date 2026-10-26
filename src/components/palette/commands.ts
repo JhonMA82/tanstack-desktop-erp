@@ -1,11 +1,11 @@
 import type { ToastInput } from "@/components/feedback/toaster";
-import type { ModulePath } from "@/lib/modules";
-import { MODULES } from "@/lib/modules";
+import type { ModulePath } from "@/config/navigation";
+import { MODULES, visiblePagesOf } from "@/config/navigation";
 
 export type CommandGroup = "NAVIGATION" | "ACTIONS";
 
 export interface CommandContext {
-  /** Navigates to a module path. */
+  /** Navigates to a registry path (module root or nested page). */
   navigate: (path: ModulePath) => void;
   /** Flips the theme. */
   toggleTheme: () => void;
@@ -28,21 +28,36 @@ export interface Command {
 }
 
 /**
- * Builds the command registry: one navigation command per module plus
- * application actions (theme toggle, exports, drafts). Extend this list to
- * add palette commands; groups control the badge color in the palette.
+ * Builds the command registry from the navigation config: one navigation command
+ * per module and one per nested page, plus the shell actions. Adding a module or
+ * a page in `src/config/navigation.ts` is enough for it to appear here.
  */
 export function createCommands(): Command[] {
-  const navigation: Command[] = MODULES.map((module) => ({
-    id: `go-${module.id}`,
-    group: "NAVIGATION",
-    label: `GO TO ${module.label}`,
-    hint: module.path,
-    run: (ctx) => {
-      ctx.navigate(module.path);
-      ctx.close();
-    },
-  }));
+  const navigation: Command[] = MODULES.flatMap((module) => {
+    const own: Command = {
+      id: `go-${module.id}`,
+      group: "NAVIGATION",
+      label: `GO TO ${module.label}`,
+      hint: module.path,
+      run: (ctx) => {
+        ctx.navigate(module.path);
+        ctx.close();
+      },
+    };
+
+    const pages: Command[] = visiblePagesOf(module.id).map((page) => ({
+      id: `go-${module.id}-${page.id}`,
+      group: "NAVIGATION",
+      label: `GO TO ${module.label} / ${page.label}`,
+      hint: page.path,
+      run: (ctx) => {
+        ctx.navigate(page.path);
+        ctx.close();
+      },
+    }));
+
+    return [own, ...pages];
+  });
 
   const actions: Command[] = [
     {
@@ -52,48 +67,6 @@ export function createCommands(): Command[] {
       hint: "APPEARANCE",
       run: (ctx) => {
         ctx.toggleTheme();
-        ctx.close();
-      },
-    },
-    {
-      id: "export-ledger-csv",
-      group: "ACTIONS",
-      label: "EXPORT LEDGER CSV",
-      hint: "ACTION",
-      run: (ctx) => {
-        ctx.notify({
-          kind: "SUCCESS",
-          title: "EXPORTED",
-          message: "Ledger CSV — 248 rows — ledger_2024-11-12.csv",
-        });
-        ctx.close();
-      },
-    },
-    {
-      id: "new-invoice-draft",
-      group: "ACTIONS",
-      label: "NEW INVOICE",
-      hint: "ACTION",
-      run: (ctx) => {
-        ctx.notify({
-          kind: "INFO",
-          title: "SAVED",
-          message: "Invoice INV-2024-1248 saved as draft",
-        });
-        ctx.close();
-      },
-    },
-    {
-      id: "post-all-invoices",
-      group: "ACTIONS",
-      label: "POST ALL INVOICES",
-      hint: "ACTION",
-      run: (ctx) => {
-        ctx.notify({
-          kind: "WARN",
-          title: "POSTING",
-          message: "Select rows to post",
-        });
         ctx.close();
       },
     },
